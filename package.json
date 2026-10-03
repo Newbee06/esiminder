@@ -1,1 +1,26 @@
-{"cloudflare":{"bindings":{"ADMIN_TOKEN":{"description":"Admin password for the web UI login. Set it during 'Deploy to Cloudflare' setup, or later via `wrangler secret put ADMIN_TOKEN`. You can change it anytime in the web UI Settings page."},"CFG":{"description":"KV namespace for sessions, channel secrets and notification state. Auto-provisioned by the 'Deploy to Cloudflare' button."},"DB":{"description":"D1 database for eSIM records and notification history. Auto-provisioned by the 'Deploy to Cloudflare' button; tables are created automatically on first request."}}},"description":"Personal eSIM manager — Cloudflare Workers + D1 + KV","license":"MIT","name":"esiminder","scripts":{"test":"node tests/run.mjs"},"type":"module","version":"2.1.0"}
+{
+  "cloudflare": {
+    "bindings": {
+      "ADMIN_TOKEN": {
+        "description": "Admin password for the web UI login. Set it during 'Deploy to Cloudflare' setup, or later via `wrangler secret put ADMIN_TOKEN`. You can change it anytime in the web UI Settings page."
+      },
+      "CFG": {
+        "description": "KV namespace for sessions, channel secrets and notification state. Auto-provisioned by the 'Deploy to Cloudflare' button."
+      },
+      "DB": {
+        "description": "D1 database for eSIM records and notification history. Auto-provisioned by the 'Deploy to Cloudflare' button; tables are created automatically on first request."
+      }
+    }
+  },
+  "description": "Personal eSIM manager — Cloudflare Workers + D1 + KV",
+  "license": "MIT",
+  "name": "esiminder",
+  "scripts": {
+    "test": "node tests/run.mjs"
+  },
+  "type": "module",
+  "version": "2.1.0",
+  "devDependencies": {
+    "wrangler": "^4.45.0"
+  }
+}
