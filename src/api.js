@@ -207,6 +207,13 @@ export async function handleEsimRenewPreview(req, env, params) {
   if (c.error) return json({ ok: false, error: c.error }, 400);
   return json({ ok: true, ...c });
 }
+async function lookupIdempotency(db, requestId) {
+  try {
+    return await db.prepare(
+      'SELECT esim_id, response FROM renew_idempotency WHERE request_id = ?'
+    ).bind(requestId).first();
+  } catch (e) { return null; }
+}
 export async function handleEsimRenew(req, env, params) {
   const { err, body } = await needAuth(req, env);
   if (err) return err;
@@ -215,40 +222,61 @@ export async function handleEsimRenew(req, env, params) {
   const { today } = await ctx(env);
   const c = computeRenewal(row, today);
   if (c.error) return json({ ok: false, error: c.error }, 400);
-  // V2.1 idempotency: the same requestId must never extend twice.
-  // The plain INSERT into renew_idempotency (UNIQUE request_id) runs in the SAME
-  // D1 batch as the renewal writes, so a concurrent duplicate fails the whole
-  // transaction atomically; the loser then returns the winner's stored response.
   const requestId = String((body && body.requestId) || '').slice(0, 64);
   const now = Date.now();
-  const result = { ok: true, oldExpiresAt: row.expiresAt || '', newExpiresAt: c.newExpiresAt, fromToday: c.fromToday };
-  const stmts = [];
+  const oldExp = row.expiresAt || '';
+  const result = { ok: true, oldExpiresAt: oldExp, newExpiresAt: c.newExpiresAt, fromToday: c.fromToday };
+
+  // V2.1 idempotency pre-check: a requestId is bound to the first esim that used it.
+  if (requestId) {
+    const prev = await lookupIdempotency(env.DB, requestId);
+    if (prev && prev.response) {
+      if (prev.esim_id !== params.id)
+        return json({ ok: false, error: 'requestId already used for another esim' }, 409);
+      return json(JSON.parse(prev.response));
+    }
+  }
+
+  // V2.1 optimistic concurrency: the UPDATE only succeeds if expiresAt is still
+  // the value we read. Two concurrent renews (different requestIds) -> exactly one
+  // wins; the loser gets 409 and must refresh. This also makes the renewal atomic:
+  // no renewal_record is written unless the extension actually happened.
+  let upd;
+  try {
+    upd = await env.DB.prepare(
+      'UPDATE esims SET expiresAt = ?, lastRenewedAt = ?, updatedAt = ? WHERE id = ? AND expiresAt = ?'
+    ).bind(c.newExpiresAt, now, now, params.id, oldExp).run();
+  } catch (e) { throw e; }
+  if (!upd.meta || upd.meta.changes !== 1) {
+    // Lost the race, or a concurrent duplicate requestId is in flight.
+    // Give the winner a moment to record its idempotency row, then re-check.
+    if (requestId) {
+      for (let i = 0; i < 4; i++) {
+        const prev = await lookupIdempotency(env.DB, requestId);
+        if (prev && prev.response) {
+          if (prev.esim_id !== params.id)
+            return json({ ok: false, error: 'requestId already used for another esim' }, 409);
+          return json(JSON.parse(prev.response));
+        }
+        if (i < 3) await new Promise(r => setTimeout(r, 120));
+      }
+    }
+    return json({ ok: false, error: 'conflict: esim was modified, please refresh and retry' }, 409);
+  }
+
+  // We won the race: atomically persist the idempotency record + history.
+  const stmts = [
+    env.DB.prepare(
+      `INSERT INTO renewal_records (id, esimId, renewedAt, days, oldExpiresAt, newExpiresAt)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(crypto.randomUUID(), params.id, now, row.cycleDays, oldExp, c.newExpiresAt)
+  ];
   if (requestId) {
     stmts.push(env.DB.prepare(
-      'INSERT INTO renew_idempotency (request_id, esim_id, created_at, response) VALUES (?, ?, ?, ?)'
+      'INSERT OR IGNORE INTO renew_idempotency (request_id, esim_id, created_at, response) VALUES (?, ?, ?, ?)'
     ).bind(requestId, params.id, now, JSON.stringify(result)));
   }
-  stmts.push(env.DB.prepare(
-    `INSERT INTO renewal_records (id, esimId, renewedAt, days, oldExpiresAt, newExpiresAt)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).bind(crypto.randomUUID(), params.id, now, row.cycleDays, row.expiresAt || '', c.newExpiresAt));
-  stmts.push(env.DB.prepare(
-    'UPDATE esims SET expiresAt = ?, lastRenewedAt = ?, updatedAt = ? WHERE id = ?'
-  ).bind(c.newExpiresAt, now, now, params.id));
-  try {
-    await env.DB.batch(stmts);
-  } catch (e) {
-    if (requestId) {
-      let prev = null;
-      try {
-        prev = await env.DB.prepare(
-          'SELECT response FROM renew_idempotency WHERE request_id = ?'
-        ).bind(requestId).first();
-      } catch (e2) {}
-      if (prev && prev.response) return json(JSON.parse(prev.response));
-    }
-    throw e;
-  }
+  await env.DB.batch(stmts);
   await clearDedup(env, params.id);
   return json(result);
 }
