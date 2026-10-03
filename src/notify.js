@@ -1,11 +1,36 @@
 // eSIMinder V2 — push channels (reused from V1, unchanged behavior) + D1 notification logging.
+// V2.1: every third-party request has a 10s timeout (AbortController); error bodies
+// are truncated to 240 chars so logs stay useful.
+const NOTIFY_TIMEOUT_MS = 10000;
+const ERR_BODY_MAX = 240;
+async function timedFetch(url, opts = {}) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), NOTIFY_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...opts, signal: ctl.signal });
+  } catch (e) {
+    if (e && e.name === 'AbortError') throw new Error('timeout after ' + NOTIFY_TIMEOUT_MS + 'ms');
+    throw e;
+  } finally {
+    clearTimeout(t);
+  }
+}
+async function errText(r) {
+  try {
+    const t = await r.text();
+    return t ? t.slice(0, ERR_BODY_MAX) : '';
+  } catch (e) { return ''; }
+}
 async function postJSON(url, body, headers = {}) {
-  const r = await fetch(url, {
+  const r = await timedFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body)
   });
-  if (!r.ok) throw new Error('HTTP ' + r.status);
+  if (!r.ok) {
+    const b = await errText(r);
+    throw new Error('HTTP ' + r.status + (b ? ': ' + b : ''));
+  }
   return r;
 }
 async function hmacSHA256Base64(key, msg) {
@@ -58,20 +83,20 @@ async function sendFeishu(cfg, title, text) {
 async function sendBark(cfg, title, text) {
   if (!cfg || !cfg.key) return { skipped: true };
   try {
-    const r = await fetch(`https://api.day.app/${cfg.key}/${encodeURIComponent(title)}/${encodeURIComponent(text)}`);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const r = await timedFetch(`https://api.day.app/${cfg.key}/${encodeURIComponent(title)}/${encodeURIComponent(text)}`);
+    if (!r.ok) { const b = await errText(r); throw new Error('HTTP ' + r.status + (b ? ': ' + b : '')); }
     return { ok: true };
   } catch (e) { return { ok: false, error: e.message }; }
 }
 async function sendServerChan(cfg, title, text) {
   if (!cfg || !cfg.sendKey) return { skipped: true };
   try {
-    const r = await fetch(`https://sctapi.ftqq.com/${cfg.sendKey}.send`, {
+    const r = await timedFetch(`https://sctapi.ftqq.com/${cfg.sendKey}.send`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `title=${encodeURIComponent(title)}&desp=${encodeURIComponent(text)}`
     });
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok) { const b = await errText(r); throw new Error('HTTP ' + r.status + (b ? ': ' + b : '')); }
     return { ok: true };
   } catch (e) { return { ok: false, error: e.message }; }
 }
