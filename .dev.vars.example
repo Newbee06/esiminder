@@ -1,0 +1,8 @@
+# eSIMinder admin password for the web UI login.
+#
+# "Deploy to Cloudflare" button: you will be asked for this value during setup.
+# Manual deploy: run `wrangler secret put ADMIN_TOKEN` instead (recommended).
+#
+# After first login you can change it inside the web UI (Settings page);
+# the new value is stored in KV and takes precedence over this secret.
+ADMIN_TOKEN=change-me-on-first-login
