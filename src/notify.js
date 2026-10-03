@@ -97,6 +97,9 @@ export const CHANNEL_LABELS = {
 export async function getChannels(env) {
   try { return (await env.CFG.get('channels', 'json')) || {}; } catch (e) { return {}; }
 }
+export function isChannelConfigured(cfg) {
+  return !!(cfg && Object.values(cfg).some(v => v));
+}
 
 // ---- bilingual message builders (reused logic from V1) ----
 export function nowInTZ(tz) {
@@ -140,16 +143,24 @@ export async function logNotification(env, { esimId, esimName, kind, daysLeft, c
   } catch (e) { /* logging must never break sending */ }
 }
 export async function fanout(env, channelsCfg, title, text, opts) {
-  // opts: { kind: 'reminder'|'test', items: [{esimId, esimName, daysLeft}] } or { kind:'test', items: [] }
-  const { kind, items, only } = opts || {};
+  // opts: { kind, items, only } (legacy test path)
+  //    or { kind:'reminder', includeKeys:[...], logCtx:{esimId,esimName,daysLeft} } (cron per-channel path)
+  // A single channel failure never stops the others (each send is individually try/caught).
+  const { kind, items, only, includeKeys, logCtx } = opts || {};
   const results = [];
   for (const [key, fn] of CHANNELS) {
     if (only && only !== 'all' && only !== key) continue;
+    if (includeKeys && !includeKeys.includes(key)) continue;
     const r = await fn(channelsCfg[key] || {}, title, text);
     if (r.skipped) continue;
     const ok = !!r.ok;
     results.push({ channel: CHANNEL_LABELS[key], key, ok, error: r.error || '' });
-    if (kind === 'reminder' && items && items.length) {
+    if (logCtx) {
+      await logNotification(env, {
+        esimId: logCtx.esimId, esimName: logCtx.esimName, kind: kind || 'reminder',
+        daysLeft: logCtx.daysLeft, channel: key, ok, error: r.error || '', title, text
+      });
+    } else if (kind === 'reminder' && items && items.length) {
       for (const it of items) {
         await logNotification(env, {
           esimId: it.esimId, esimName: it.esimName, kind, daysLeft: it.daysLeft,
