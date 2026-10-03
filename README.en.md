@@ -45,6 +45,37 @@ Built on Cloudflare Workers + D1 + KV. No servers to maintain — deploy to your
 >
 > eSIMinder focuses on personal eSIM lifecycle management. No sign-up, no multi-user, no payments, no finance features.
 
+## 🖥️ Screenshots
+
+> 📸 Screenshots coming soon.
+>
+> Captures will be added once the production UI is ready, under `docs/screenshots/`.
+
+### Dashboard
+
+<!-- Screenshot: docs/screenshots/dashboard.png
+     Recommended 1440×900 (16:10). Show: eSIM count / expiring soon / expired / recent notifications / eSIM list. Keep the top navigation visible. -->
+
+### eSIM Detail
+
+<!-- Screenshot: docs/screenshots/esim-detail.png
+     Recommended 1440×900. Show: basic info / expiry date / status / renewal cycle / "renewal link" / "renew" buttons. -->
+
+### One-Click Renewal
+
+<!-- Screenshot: docs/screenshots/renewal.png
+     Recommended 1440×900. Show: current expiry / new expiry / renewal cycle / confirmation dialog. -->
+
+### Notification Center
+
+<!-- Screenshot: docs/screenshots/notifications.png
+     Recommended 1440×900. Show: notification history / status / success & failure / retry button. -->
+
+### Mobile
+
+<!-- Screenshot: docs/screenshots/mobile.png
+     Recommended 390×844. Show: bottom Tab Bar / Dashboard / eSIM cards / expiry status. -->
+
 ## 👤 Who It's For
 
 - Travelers who regularly use overseas eSIMs
