@@ -4,8 +4,6 @@
 
 eSIM lifecycle manager: track expiry → auto reminders → one-tap renewal. Never lose an eSIM again.
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder)
-
 ## ✨ V2.1 功能 Features
 
 - 📱 **eSIM 全生命周期管理**：名称 / 国家 / 地区 / 运营商 / 手机号 / 激活日 / 到期日 / 续期周期 / 续费平台 / 续费地址 / 标签 / 备注
@@ -43,6 +41,24 @@ wrangler deploy
 ```
 
 首次打开网页用 `ADMIN_TOKEN` 的值登录，系统会强制你修改默认密码。
+
+## 🆕 V2.1 更新
+
+- **续费幂等**：`POST /api/esims/:id/renew` 支持 `requestId`，相同 ID 重复提交只生效一次；续期写入使用 D1 batch 原子执行
+- **并发续费保护**：乐观锁（`UPDATE ... WHERE expiresAt=旧值`），冲突返回 `409`，前端提示刷新重试
+- **通知去重进 D1**：新增 `notification_dedup` 表（`pending → sending → sent/failed`），并发 Cron 通过 claim 机制不会重复推送，失败自动重试
+- **严格日期校验**：拒绝 `2024-02-30`、`2025-13-01` 等非法日期
+- **配置标准化**：`reminderDays` 自动去重/排序/上限；`timezone` 服务端验证，非法返回 400
+- **通知超时**：全部 7 个渠道 10 秒超时，错误信息截断
+
+### 从 V2.0 升级到 V2.1
+
+**无需手动修改数据库。** 首次运行（HTTP 请求或 Cron）会自动完成 V2.1 migration：
+
+- 创建 `notification_dedup` 和 `renew_idempotency` 表（`CREATE TABLE IF NOT EXISTS`，可重复执行）
+- 旧 KV 通知去重状态自动迁移到 D1
+- 原有 eSIM / 续期记录 / 通知历史 / 设置数据不受影响
+- migration 标记为 `migrated_v21`，独立于 V2.0 的 `migrated_v2`
 
 ## 🗄️ D1 Schema
 
