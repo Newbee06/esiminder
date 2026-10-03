@@ -323,7 +323,7 @@ async function renderDashboard(){
   }
   h += '<div class="sech"><h2>' + t('secAllEsims') + '</h2><a href="#/esims">' + t('viewAll') + ' →</a></div>';
   h += d.esims.length ? d.esims.slice(0, 6).map(esimCard).join('') : emptyState('📱', t('emptyEsims'));
-  h += '<button class="fab" onclick="nav(\'#/esim/new\')">＋</button>';
+  h += '<button class="fab" onclick="nav(\\'#/esim/new\\')">＋</button>';
   setView(layout(h, 'home'));
 }
 function statCard(n, label, status){
@@ -365,7 +365,7 @@ function paintEsimList(items, q0){
     return true;
   });
   h += '<div id="elist">' + (list.length ? list.map(esimCard).join('') : emptyState('🔍', t('emptyEsims'))) + '</div>';
-  h += '<button class="fab" onclick="nav(\'#/esim/new\')">＋</button>';
+  h += '<button class="fab" onclick="nav(\\'#/esim/new\\')">＋</button>';
   setView(layout(h, 'esims'));
   var qi = document.getElementById('q');
   var deb;
@@ -386,7 +386,7 @@ async function renderEsimDetail(id){
   var d = await api('GET', '/api/esims/' + encodeURIComponent(id));
   if (!d.ok) { nav('#/esims'); return; }
   var e = d.esim;
-  var h = '<button class="backbtn" onclick="nav(\'#/esims\')">‹ ' + t('back') + '</button>';
+  var h = '<button class="backbtn" onclick="nav(\\'#/esims\\')">‹ ' + t('back') + '</button>';
   h += '<div class="detailhead"><span class="flag">' + flagFor(e.country) + '</span><div>'
     + '<div class="nm">' + esc(e.name) + '</div>'
     + '<div class="car">' + esc([e.carrier, e.country, e.region].filter(function(x){ return x; }).join(' · ')) + '</div>'
@@ -423,9 +423,9 @@ async function renderEsimDetail(id){
   } else {
     h += '<div class="card" style="color:var(--text2);font-size:14px;text-align:center;">' + t('histEmpty') + '</div>';
   }
-  h += '<div class="btnrow"><button class="btn" onclick="openRenew(\'' + e.id + '\')">✓ ' + t('renewBtn') + '</button>'
-    + '<button class="btn ghost" onclick="nav(\'#/esim/' + e.id + '/edit\')">' + t('edit') + '</button></div>';
-  h += '<div style="margin-top:18px;text-align:center;"><a href="javascript:void(0)" onclick="doDelete(\'' + e.id + '\')" style="color:var(--red);font-size:14px;">' + t('del') + '</a></div>';
+  h += '<div class="btnrow"><button class="btn" onclick="openRenew(\\'' + e.id + '\\')">✓ ' + t('renewBtn') + '</button>'
+    + '<button class="btn ghost" onclick="nav(\\'#/esim/' + e.id + '/edit\\')">' + t('edit') + '</button></div>';
+  h += '<div style="margin-top:18px;text-align:center;"><a href="javascript:void(0)" onclick="doDelete(\\'' + e.id + '\\')" style="color:var(--red);font-size:14px;">' + t('del') + '</a></div>';
   setView(layout(h, 'esims'));
   window._detail = e;
 }
@@ -557,7 +557,7 @@ async function renderNotifications(){
         + '<div class="nt">' + esc(n.esimName ? n.esimName + ' · ' + title : title) + '</div>'
         + '<div class="nmeta">' + fmtTime(n.createdAt) + ' · ' + esc(channelLabel(n.channel)) + ' · ' + okc + '</div>'
         + (n.error ? '<div class="nm" style="color:var(--red)">' + esc(n.error) + '</div>' : '')
-        + (n.status !== 'ok' ? '<div style="margin-top:8px;"><button class="btn sm ghost" onclick="doRetry(\'' + n.id + '\')">' + t('retry') + '</button></div>' : '')
+        + (n.status !== 'ok' ? '<div style="margin-top:8px;"><button class="btn sm ghost" onclick="doRetry(\\'' + n.id + '\\')">' + t('retry') + '</button></div>' : '')
         + '</div></div>';
     });
   }
