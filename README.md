@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://x.com/BTC108_">🐦 @BTC108_</a>
+  <a href="https://x.com/BTC108_">𝕏 @BTC108_</a>
 </p>
 
 ---
@@ -179,7 +179,7 @@ npm test
 
 ## 🤝 Author
 
-Created by [🐦 @BTC108_](https://x.com/BTC108_)
+Created by [𝕏 @BTC108_](https://x.com/BTC108_)
 
 ## License
 
