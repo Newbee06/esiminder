@@ -51,7 +51,7 @@ zh: {
   emptyEsims: '还没有 eSIM，点击右上角添加',
   emptyExpiring: '太棒了，没有即将到期的 eSIM 🎉',
   detailTitle: 'eSIM 详情',
-  clear: '清除', notifSent: '已发送', willRetry: '下次自动重试',
+  clear: '清除', notifSent: '已发送', willRetry: '下次自动重试', manualRetry: '请手动重试',
 },
 en: {
   appName: 'eSIMinder', appSub: 'Personal eSIM Manager',
@@ -104,5 +104,5 @@ en: {
   emptyEsims: 'No eSIMs yet — tap + to add one',
   emptyExpiring: 'All good, nothing expiring soon 🎉',
   detailTitle: 'eSIM Details',
-  clear: 'Clear', notifSent: 'Sent', willRetry: 'Will auto-retry',
+  clear: 'Clear', notifSent: 'Sent', willRetry: 'Will auto-retry', manualRetry: 'Retry manually',
 }};
