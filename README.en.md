@@ -73,12 +73,9 @@ Built on Cloudflare Workers + D1 + KV. No servers to maintain — deploy to your
 
 ### Mobile
 
-<!-- Screenshot: docs/screenshots/mobile.png
-     Recommended 390×844. Show: bottom Tab Bar / Dashboard / eSIM cards / expiry status.
-     Replace with once the capture is ready:
-     <p align="center">
-       <img src="./docs/screenshots/mobile.png" alt="Mobile UI" width="320">
-     </p> -->
+<p align="center">
+  <img src="./docs/screenshots/mobile.png" alt="Mobile UI" width="320">
+</p>
 
 ## 👤 Who It's For
 
