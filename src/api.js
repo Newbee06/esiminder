@@ -237,19 +237,35 @@ export async function handleEsimRenew(req, env, params) {
     }
   }
 
-  // V2.1 optimistic concurrency: the UPDATE only succeeds if expiresAt is still
-  // the value we read. Two concurrent renews (different requestIds) -> exactly one
-  // wins; the loser gets 409 and must refresh. This also makes the renewal atomic:
-  // no renewal_record is written unless the extension actually happened.
-  let upd;
-  try {
-    upd = await env.DB.prepare(
-      'UPDATE esims SET expiresAt = ?, lastRenewedAt = ?, updatedAt = ? WHERE id = ? AND expiresAt = ?'
-    ).bind(c.newExpiresAt, now, now, params.id, oldExp).run();
-  } catch (e) { throw e; }
-  if (!upd.meta || upd.meta.changes !== 1) {
-    // Lost the race, or a concurrent duplicate requestId is in flight.
-    // Give the winner a moment to record its idempotency row, then re-check.
+  // V2.1 atomic renewal: ONE D1 batch, all three writes conditional on the same
+  // predicate (esim still has oldExp). D1 batch is transactional: either all three
+  // succeed or all roll back. If the predicate fails (lost race), nothing is
+  // written — not the history, not the idempotency row.
+  const recordId = crypto.randomUUID();
+  const stmts = [
+    env.DB.prepare(`
+      INSERT INTO renewal_records (id, esimId, renewedAt, days, oldExpiresAt, newExpiresAt)
+      SELECT ?, id, ?, ?, expiresAt, ?
+      FROM esims WHERE id = ? AND expiresAt = ?
+    `).bind(recordId, now, row.cycleDays, c.newExpiresAt, params.id, oldExp),
+    env.DB.prepare(`
+      UPDATE esims SET expiresAt = ?, lastRenewedAt = ?, updatedAt = ?
+      WHERE id = ? AND expiresAt = ?
+    `).bind(c.newExpiresAt, now, now, params.id, oldExp),
+  ];
+  if (requestId) {
+    stmts.push(env.DB.prepare(`
+      INSERT INTO renew_idempotency (request_id, esim_id, created_at, response)
+      SELECT ?, ?, ?, ?
+      WHERE EXISTS (SELECT 1 FROM renewal_records WHERE id = ?)
+    `).bind(requestId, params.id, now, JSON.stringify(result), recordId));
+  }
+  const results = await env.DB.batch(stmts);
+  const updateChanges = results[1] && results[1].meta ? results[1].meta.changes : 0;
+
+  if (updateChanges !== 1) {
+    // Lost the race and nothing was written. It might be a concurrent duplicate
+    // requestId: give the winner a moment, then re-check.
     if (requestId) {
       for (let i = 0; i < 4; i++) {
         const prev = await lookupIdempotency(env.DB, requestId);
@@ -264,19 +280,6 @@ export async function handleEsimRenew(req, env, params) {
     return json({ ok: false, error: 'conflict: esim was modified, please refresh and retry' }, 409);
   }
 
-  // We won the race: atomically persist the idempotency record + history.
-  const stmts = [
-    env.DB.prepare(
-      `INSERT INTO renewal_records (id, esimId, renewedAt, days, oldExpiresAt, newExpiresAt)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).bind(crypto.randomUUID(), params.id, now, row.cycleDays, oldExp, c.newExpiresAt)
-  ];
-  if (requestId) {
-    stmts.push(env.DB.prepare(
-      'INSERT OR IGNORE INTO renew_idempotency (request_id, esim_id, created_at, response) VALUES (?, ?, ?, ?)'
-    ).bind(requestId, params.id, now, JSON.stringify(result)));
-  }
-  await env.DB.batch(stmts);
   await clearDedup(env, params.id);
   return json(result);
 }
