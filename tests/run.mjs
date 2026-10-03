@@ -421,6 +421,24 @@ console.log('-- API 路由 --');
   ok('未登录 401', r401.status === 401);
 }
 
+// ================= 6. 部署配置 =================
+{
+  const fs = await import('node:fs');
+  const toml = fs.readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8');
+  ok('wrangler: 有 KV CFG binding', /\[\[kv_namespaces\]\][\s\S]*?binding\s*=\s*"CFG"/.test(toml));
+  ok('wrangler: 有 D1 DB binding', /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"DB"/.test(toml));
+  ok('wrangler: D1 有 database_name', /database_name\s*=\s*"esiminder-db"/.test(toml));
+  ok('wrangler: Cron 保留 (0 1 * * *)', /crons\s*=\s*\["0 1 \* \* \*"\]/.test(toml));
+  ok('wrangler: entrypoint 是 src/index.js', /main\s*=\s*"src\/index\.js"/.test(toml));
+  const devVars = fs.readFileSync(new URL('../.dev.vars.example', import.meta.url), 'utf8');
+  ok('.dev.vars.example: 声明 ADMIN_TOKEN', /^ADMIN_TOKEN=/m.test(devVars));
+  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  ok('package.json: 有 cloudflare.bindings 说明', !!(pkg.cloudflare && pkg.cloudflare.bindings && pkg.cloudflare.bindings.DB && pkg.cloudflare.bindings.CFG));
+  const readme = fs.readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+  ok('README: 有真实 Deploy Button 链接', readme.includes('https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder'));
+  ok('README: 无作者资源 ID 硬编码要求', !readme.includes('6d5dd1455ef3446db547ee5f88aba953'));
+}
+
 // ================= 汇总 =================
 for (const line of results) console.log(line);
 console.log(`\n${pass} passed, ${fail} failed`);
