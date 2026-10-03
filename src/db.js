@@ -46,6 +46,25 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT DEFAULT ''
 );
+-- V2.1: per-channel notification dedup (strong consistency, replaces KV read-modify-write).
+-- status: pending -> sending -> sent or failed. failed rows are retried by the next cron.
+CREATE TABLE IF NOT EXISTS notification_dedup (
+  esim_id TEXT NOT NULL,
+  threshold INTEGER NOT NULL,
+  channel TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (esim_id, threshold, channel)
+);
+-- V2.1: renew idempotency. The plain INSERT (no OR IGNORE) inside the renew
+-- batch makes concurrent duplicate request_ids fail the whole transaction.
+CREATE TABLE IF NOT EXISTS renew_idempotency (
+  request_id TEXT PRIMARY KEY,
+  esim_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  response TEXT NOT NULL
+);
 `;
 
 export async function ensureSchema(db) {
@@ -76,7 +95,9 @@ export function daysUntil(dateStr, todayStr) {
 }
 export function validDateStr(s) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s || '')) return false;
-  return !isNaN(Date.parse(s));
+  const [y, m, d] = s.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  return dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
 }
 export function parseThresholds(s) {
   const arr = String(s || '7,3,1,0').split(',')
