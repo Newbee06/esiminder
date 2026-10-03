@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>个人 eSIM 生命周期管理工具</strong><br>
-  Track expiry · Get reminders · Renew in one click
+  集中管理 eSIM · 到期自动提醒 · 一键续期 · 多渠道通知
 </p>
 
 <p align="center">
@@ -21,110 +21,84 @@
 
 ---
 
-海外 eSIM 到期前自动提醒、一键续期。再也不怕忘记续费丢卡。
+> 不再因为忘记续费，让一张 eSIM 在旅行途中突然失效。
 
-## ✨ 功能
+## ✨ 核心功能
 
 ### 📱 eSIM 管理
 
-- 基础信息：名称 / 国家 / 地区 / 运营商 / 手机号 / 激活日 / 到期日
-- 续费周期、续费平台、续费地址（详情页「前往续费」新标签页打开）
-- 标签（iOS 胶囊样式）、搜索、状态筛选
-- 状态自动计算：🟢使用中 🟡即将到期 🔴已过期 ⚪未激活 ⚫已停用
+统一管理名称、国家/地区、运营商、手机号、激活日期、到期日期、续费周期和续费链接。支持标签、搜索、状态筛选，状态由系统自动计算。
 
-### 🔄 续期
+### 🔔 到期提醒
 
-- 一键续期，确认弹窗显示新到期日
-- 已过期的卡从今天起算（`max(旧到期, 今天) + 周期`）
-- 续期预览（服务器计算，不依赖前端）
-- 每次续期自动记入续期历史
-- `requestId` 幂等：重复提交只生效一次；并发安全
+支持 7 / 3 / 1 / 0 天提醒，可自定义提醒周期。7 个通知渠道：Telegram、微信（企业微信）、钉钉、飞书、Bark、Server酱、邮件（Resend）。
 
-### 🔔 通知
+### 🔄 一键续期
 
-7 个推送通道，后台配置 + 一键测试：
+自动计算新的到期日期，支持过期卡续期、续期预览、续期历史和 `requestId` 幂等。
 
-Telegram · 企业微信 · 钉钉 · 飞书 · Bark · Server酱 · Resend 邮件
+### ☁️ Cloudflare 部署
 
-- 到期前 7 / 3 / 1 / 0 天各提醒一次（可自定义），去重不打扰
-- 通知中心落库每条推送，失败可一键重发
+基于 Cloudflare Workers + D1 + KV，无需自建服务器，可部署到用户自己的 Cloudflare 账户。
 
-### 🎨 界面
+> **设计定位**
+>
+> eSIMinder 专注个人 eSIM 生命周期管理，不包含用户注册、多用户、支付及财务管理等复杂业务。
 
-- iOS 风格，浅色 / 深色 / 跟随系统
-- 手机底部 Tab Bar，电脑左侧 Sidebar
-- 中英双语，默认中文
+## 👤 适合谁
 
-### 🔐 安全
+- 经常使用海外 eSIM 的旅行者
+- 同时管理多张 eSIM 的用户
+- 需要长期记录套餐到期时间的用户
+- 不想因为忘记续费导致 eSIM 失效的用户
 
-- 登录会话 7 天，5 次输错锁定 15 分钟
-- 首次登录强制修改默认密码
-- HttpOnly / Secure / SameSite Cookie
-- 密钥只存 KV / D1，绝不进入 GitHub
+## 🎨 界面
 
-**不做的**：流量统计、财务金额、ICCID/EID/APN、用户注册、多用户、会员、支付。
+iOS 风格设计，浅色 / 深色 / 跟随系统；手机底部 Tab Bar，电脑左侧 Sidebar；中英双语。
 
-## 🚀 部署 Deployment
+## 🚀 部署
 
 ### A. 一键部署
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder)
 
-1. 点击 **Deploy to Cloudflare**
-2. 登录 Cloudflare，选择自己的 Account
-3. 配置 `ADMIN_TOKEN`（后台登录密码，自己设定）
-4. Cloudflare 为该部署创建自己的 D1 / KV
-5. 完成部署，打开 Worker URL
-6. 用 `ADMIN_TOKEN` 登录，首次登录后去「设置」页改密码
+1. 点击 **Deploy to Cloudflare**，登录并选择自己的 Cloudflare Account
+2. 设置 `ADMIN_TOKEN`（后台登录密码）
+3. Cloudflare 自动为该部署创建 D1 / KV，完成 Worker 部署
+4. 打开 Worker URL，用 `ADMIN_TOKEN` 登录，首次登录后修改密码
 
-> 每次部署使用部署者自己账号中的 D1 / KV，不使用仓库作者的资源。
-> `ADMIN_TOKEN` 由部署者设置，不提交到 GitHub。
-> 数据库表首次请求自动创建，迁移自动执行，Cron 每天北京时间 09:00。
+> 每次部署使用部署者自己账号中的 D1 / KV，不使用仓库作者的资源。`ADMIN_TOKEN` 不提交到 GitHub。
 
 ### B. 手动部署
 
 ```bash
 npm install
-
-# 可选：手动创建资源（也可跳过，deploy 时自动供应）
-npx wrangler kv namespace create CFG
-npx wrangler d1 create esiminder-db
-
-# 设置后台密码
+npx wrangler kv namespace create CFG   # 可选：deploy 时可自动供应
+npx wrangler d1 create esiminder-db    # 可选：deploy 时可自动供应
 npx wrangler secret put ADMIN_TOKEN
-
-# 部署
 npx wrangler deploy
 ```
 
-> 如 CLI 返回资源 ID，只写入你本地的 `wrangler.toml`，不要提交到公开仓库。
+> 如 CLI 返回资源 ID，只写入本地 `wrangler.toml`，不要提交到公开仓库。
 
-## 🆕 What's New in V2.1
+## 🆕 V2.1 更新
 
 | 功能 | 说明 |
 |---|---|
-| Renewal Idempotency | `requestId` 防止重复续费 |
-| Atomic Renewal | D1 单 batch 原子事务，三者同生共死 |
-| Notification Dedup | 通知去重进 D1（pending → sending → sent / failed） |
-| Retry | 失败自动重试，可一键重发 |
-| Date Validation | 拒绝 `2024-02-30` 等非法日期 |
-| Config Validation | `reminderDays` 标准化、`timezone` 服务端校验 |
-| Timeout | 全部 7 个渠道 10 秒超时 |
+| 续费幂等 | `requestId` 防止重复续费 |
+| 原子续期 | D1 单事务，要么全部成功要么全部回滚 |
+| 通知去重 | 去重状态进 D1，失败自动重试 |
+| 日期校验 | 拒绝非法日期 |
+| 配置校验 | 提醒天数标准化、时区服务端校验 |
+| 通知超时 | 全部渠道 10 秒超时 |
 
-<details>
-<summary>Technical Details</summary>
+## 🏗️ 技术架构
 
-- 续费：`INSERT renewal_records ... SELECT ... WHERE expiresAt=旧值` + `UPDATE esims ... WHERE expiresAt=旧值` + 条件 `INSERT renew_idempotency`，同一 D1 batch；并发不同 `requestId` 恰好一个成功、另一个 `409`；跨 eSIM 重用 `requestId` 返回 `409`
-- 通知：`notification_dedup` 表 + claim 机制，并发 Cron 不重复推送；stale `sending` 自动回收；旧 KV 去重数据自动迁移
+Cloudflare Workers + D1 + KV，无其他依赖。
 
-</details>
-
-## 🔄 迁移 Migration
-
-> 无需手动修改数据库，首次请求或 Cron 会自动完成迁移。
-
-- V1 → V2：KV `esims` 自动迁入 D1（幂等）
-- V2.0 → V2.1：自动建 `notification_dedup` / `renew_idempotency` 表（`CREATE TABLE IF NOT EXISTS`）
+- 数据库表首次请求自动创建，无需手动执行 SQL
+- V1 → V2、V2.0 → V2.1 迁移自动执行（幂等）
+- Cron `0 1 * * *`，每天北京时间 09:00 检查到期并推送提醒
 
 ## 🗄️ 数据结构
 
@@ -157,19 +131,13 @@ KV
 | GET | `/api/notifications` | 通知记录 |
 | GET / PUT | `/api/settings` | 设置 |
 
-## 🧪 测试 Tests
+## 🧪 测试
 
 ```bash
 npm test
 ```
 
-当前状态：
-
-```
-75 passed · 0 failed
-```
-
-`tests/run.mjs` 用 `node:sqlite` 模拟 D1，覆盖续费幂等与并发、通知去重与重试、日期与配置校验、Cron、迁移、部署配置。
+覆盖：Renewal Idempotency、Concurrent Renewal、Notification Deduplication、Notification Retry、Date Validation、Configuration Validation、Cron、Migration、Deployment Configuration。
 
 ## ⚠️ 已知问题
 
