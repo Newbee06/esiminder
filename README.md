@@ -73,12 +73,9 @@
 
 ### 移动端
 
-<!-- Screenshot: docs/screenshots/mobile.png
-     推荐 390×844。展示：手机底部 Tab Bar / Dashboard / eSIM 卡片 / 到期状态。
-     截图就绪后替换为：
-     <p align="center">
-       <img src="./docs/screenshots/mobile.png" alt="移动端界面" width="320">
-     </p> -->
+<p align="center">
+  <img src="./docs/screenshots/mobile.png" alt="移动端界面" width="320">
+</p>
 
 ## 👤 适合谁
 
