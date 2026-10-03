@@ -44,7 +44,7 @@ function matchRoute(method, path) {
   return null;
 }
 function html(s) {
-  return new Response(s, { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  return new Response(s, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 // paths allowed while password change is forced
 const MUST_CHANGE_ALLOW = new Set(['/api/admin-password', '/api/logout']);
