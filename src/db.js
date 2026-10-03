@@ -85,11 +85,14 @@ export function parseThresholds(s) {
 }
 
 // ---- unified status: the ONLY place that computes display status ----
+// Never conflates "no expiresAt" with user-chosen "inactive":
+// inactive/disabled always reflect the user's explicit choice;
+// an active esim without expiry simply shows as active with no countdown.
 export const DISPLAY_STATUSES = ['active', 'expiring', 'expired', 'inactive', 'disabled'];
 export function computeDisplayStatus(row, todayStr, maxThreshold) {
   if (row.status === 'inactive') return 'inactive';
   if (row.status === 'disabled') return 'disabled';
-  if (!row.expiresAt) return 'inactive';
+  if (!row.expiresAt) return 'active';
   const d = daysUntil(row.expiresAt, todayStr);
   if (d === null || d < 0) return 'expired';
   if (d <= maxThreshold) return 'expiring';
