@@ -1,0 +1,1 @@
+{"description":"Personal eSIM manager — Cloudflare Workers + D1 + KV","license":"MIT","name":"esiminder","scripts":{"test":"node tests/run.mjs"},"type":"module","version":"2.1.0"}
