@@ -171,6 +171,56 @@ console.log('-- 续费 --');
   ok('测试3 跨 eSIM 重用：B 未被续费', rowB.expiresAt === shift(10), rowB.expiresAt);
 }
 
+{
+  // 事务一致性：成功续费只用 1 个 batch（含 3 条语句）
+  const env = await setupEnv();
+  await addEsim(env, 'e1', { expiresAt: shift(10) });
+  let batchCalls = 0, stmtCounts = [];
+  const origBatch = env.DB.batch;
+  env.DB.batch = async (stmts) => { batchCalls++; stmtCounts.push(stmts.length); return origBatch(stmts); };
+  const r = await (await api.handleEsimRenew(authed('POST', '/api/esims/e1/renew', { requestId: 'txn-1' }), env, { id: 'e1' })).json();
+  ok('事务：成功续费只用1个batch', r.ok && batchCalls === 1, `batches=${batchCalls}`);
+  ok('事务：batch含3条语句', stmtCounts[0] === 3, `stmts=${stmtCounts[0]}`);
+  const rec = await env.DB.prepare('SELECT COUNT(*) c FROM renewal_records').bind().first();
+  const idem = await env.DB.prepare('SELECT COUNT(*) c FROM renew_idempotency').bind().first();
+  const row = await env.DB.prepare('SELECT expiresAt FROM esims WHERE id=?').bind('e1').first();
+  ok('事务：三者一致写入', rec.c === 1 && idem.c === 1 && row.expiresAt === shift(40));
+}
+{
+  // 场景 E：batch 失败 -> 全部回滚，无部分写入
+  const env = await setupEnv();
+  await addEsim(env, 'e1', { expiresAt: shift(10) });
+  const before = (await env.DB.prepare('SELECT expiresAt FROM esims WHERE id=?').bind('e1').first()).expiresAt;
+  env.DB.batch = async () => { throw new Error('simulated D1 failure'); };
+  let threw = false;
+  try {
+    await api.handleEsimRenew(authed('POST', '/api/esims/e1/renew', { requestId: 'txn-fail' }), env, { id: 'e1' });
+  } catch (e) { threw = true; }
+  const after = (await env.DB.prepare('SELECT expiresAt FROM esims WHERE id=?').bind('e1').first()).expiresAt;
+  const rec = await env.DB.prepare('SELECT COUNT(*) c FROM renewal_records').bind().first();
+  const idem = await env.DB.prepare('SELECT COUNT(*) c FROM renew_idempotency').bind().first();
+  ok('场景E batch失败：抛出错误', threw);
+  ok('场景E batch失败：expiresAt未变', after === before, `${before} vs ${after}`);
+  ok('场景E batch失败：无renewal_records', rec.c === 0);
+  ok('场景E batch失败：无idempotency', idem.c === 0);
+}
+{
+  // 条件写入：并发失败者不留下任何写入（history/idempotency 都没有）
+  const env = await setupEnv();
+  await addEsim(env, 'e1', { expiresAt: shift(10) });
+  const [a, b] = await Promise.all([
+    api.handleEsimRenew(authed('POST', '/api/esims/e1/renew', { requestId: 'cond-a' }), env, { id: 'e1' }).then(async r => ({ status: r.status, body: await r.json() })),
+    api.handleEsimRenew(authed('POST', '/api/esims/e1/renew', { requestId: 'cond-b' }), env, { id: 'e1' }).then(async r => ({ status: r.status, body: await r.json() }))
+  ]);
+  const winner = a.status === 200 ? 'cond-a' : 'cond-b';
+  const loser = a.status === 200 ? 'cond-b' : 'cond-a';
+  const loserIdem = await env.DB.prepare('SELECT * FROM renew_idempotency WHERE request_id=?').bind(loser).first();
+  const recCount = await env.DB.prepare('SELECT COUNT(*) c FROM renewal_records').bind().first();
+  ok('条件写入：失败者无idempotency残留', !loserIdem, `loser=${loser}`);
+  ok('条件写入：history只有一条', recCount.c === 1);
+  ok('条件写入：胜者idempotency存在', !!(await env.DB.prepare('SELECT * FROM renew_idempotency WHERE request_id=?').bind(winner).first()));
+}
+
 // ================= 3. 配置 =================
 console.log('-- 配置 --');
 {
