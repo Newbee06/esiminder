@@ -133,6 +133,12 @@ var CSS = ':root{--sat:env(safe-area-inset-top);--sab:env(safe-area-inset-bottom
 + '.detailhead .nm{font-size:23px;font-weight:800;}'
 + '.detailhead .car{color:var(--text2);font-size:14px;margin-top:3px;}'
 + '.kbd{font-size:12px;color:var(--text2);}';
+/* inject styles: the shell carries no <style> tag, so the SPA must add its own */
+try {
+  var _styleEl = document.createElement('style');
+  _styleEl.textContent = CSS;
+  document.head.appendChild(_styleEl);
+} catch (_e) {}
 /* ---------- utils ---------- */
 function esc(s){ return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 async function api(method, path, body){
@@ -689,5 +695,12 @@ async function render(){
   return renderDashboard();
 }
 applyTheme();
-render();
+try {
+  var _boot = render();
+  if (_boot && _boot.catch) _boot.catch(function(e){
+    document.getElementById('app').innerHTML = '<div style="padding:48px 24px;text-align:center;font-size:14px;color:#8e8e93;">⚠️ ' + esc(String((e && e.message) || e)) + '</div>';
+  });
+} catch (e) {
+  document.getElementById('app').innerHTML = '<div style="padding:48px 24px;text-align:center;font-size:14px;color:#8e8e93;">⚠️ ' + esc(String((e && e.message) || e)) + '</div>';
+}
 `;
