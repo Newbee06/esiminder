@@ -58,6 +58,8 @@ function sanitizeEsim(b, isCreate) {
   return { value: o };
 }
 async function clearDedup(env, esimId) {
+  // V2.1: dedup lives in D1. Also clear legacy KV state (harmless if absent).
+  try { await env.DB.prepare('DELETE FROM notification_dedup WHERE esim_id = ?').bind(esimId).run(); } catch (e) {}
   try {
     const st = (await env.CFG.get('state', 'json')) || {};
     const n = st.remindNotified || {};
@@ -206,23 +208,49 @@ export async function handleEsimRenewPreview(req, env, params) {
   return json({ ok: true, ...c });
 }
 export async function handleEsimRenew(req, env, params) {
-  const { err } = await needAuth(req, env);
+  const { err, body } = await needAuth(req, env);
   if (err) return err;
   const row = await getEsim(env.DB, params.id);
   if (!row) return json({ ok: false, error: 'not found' }, 404);
   const { today } = await ctx(env);
   const c = computeRenewal(row, today);
   if (c.error) return json({ ok: false, error: c.error }, 400);
+  // V2.1 idempotency: the same requestId must never extend twice.
+  // The plain INSERT into renew_idempotency (UNIQUE request_id) runs in the SAME
+  // D1 batch as the renewal writes, so a concurrent duplicate fails the whole
+  // transaction atomically; the loser then returns the winner's stored response.
+  const requestId = String((body && body.requestId) || '').slice(0, 64);
   const now = Date.now();
-  await env.DB.prepare(
+  const result = { ok: true, oldExpiresAt: row.expiresAt || '', newExpiresAt: c.newExpiresAt, fromToday: c.fromToday };
+  const stmts = [];
+  if (requestId) {
+    stmts.push(env.DB.prepare(
+      'INSERT INTO renew_idempotency (request_id, esim_id, created_at, response) VALUES (?, ?, ?, ?)'
+    ).bind(requestId, params.id, now, JSON.stringify(result)));
+  }
+  stmts.push(env.DB.prepare(
     `INSERT INTO renewal_records (id, esimId, renewedAt, days, oldExpiresAt, newExpiresAt)
      VALUES (?, ?, ?, ?, ?, ?)`
-  ).bind(crypto.randomUUID(), params.id, now, row.cycleDays, row.expiresAt || '', c.newExpiresAt).run();
-  await env.DB.prepare(
+  ).bind(crypto.randomUUID(), params.id, now, row.cycleDays, row.expiresAt || '', c.newExpiresAt));
+  stmts.push(env.DB.prepare(
     'UPDATE esims SET expiresAt = ?, lastRenewedAt = ?, updatedAt = ? WHERE id = ?'
-  ).bind(c.newExpiresAt, now, now, params.id).run();
+  ).bind(c.newExpiresAt, now, now, params.id));
+  try {
+    await env.DB.batch(stmts);
+  } catch (e) {
+    if (requestId) {
+      let prev = null;
+      try {
+        prev = await env.DB.prepare(
+          'SELECT response FROM renew_idempotency WHERE request_id = ?'
+        ).bind(requestId).first();
+      } catch (e2) {}
+      if (prev && prev.response) return json(JSON.parse(prev.response));
+    }
+    throw e;
+  }
   await clearDedup(env, params.id);
-  return json({ ok: true, oldExpiresAt: row.expiresAt || '', newExpiresAt: c.newExpiresAt, fromToday: c.fromToday });
+  return json(result);
 }
 
 // ---------------- dashboard / tags ----------------
@@ -318,19 +346,30 @@ export async function handleSettingsGet(req, env) {
   }
   return json({ ok: true, settings, chStatus });
 }
+function validTimezone(tz) {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz }).format();
+    return true;
+  } catch (e) { return false; }
+}
 export async function handleSettingsPut(req, env) {
   const { err, body } = await needAuth(req, env);
   if (err) return err;
   if (body.reminderDays !== undefined) {
-    const rd = String(body.reminderDays).slice(0, 100);
-    parseThresholds(rd);
-    await setSetting(env.DB, 'reminderDays', rd);
+    // V2.1: normalize and persist only the canonical form (deduped, sorted,
+    // capped). parseThresholds already rejects non-numbers/negatives.
+    const thresholds = parseThresholds(String(body.reminderDays).slice(0, 100))
+      .filter(t => t <= 365).slice(0, 10);
+    await setSetting(env.DB, 'reminderDays', (thresholds.length ? thresholds : [7, 3, 1, 0]).join(','));
   }
   if (body.notifLang !== undefined) await setSetting(env.DB, 'notifLang', body.notifLang === 'en' ? 'en' : 'zh');
   if (body.theme !== undefined && ['system', 'light', 'dark'].includes(body.theme))
     await setSetting(env.DB, 'theme', body.theme);
-  if (body.timezone !== undefined && String(body.timezone).trim())
-    await setSetting(env.DB, 'timezone', String(body.timezone).trim().slice(0, 60));
+  if (body.timezone !== undefined) {
+    const tz = String(body.timezone).trim().slice(0, 60) || 'Asia/Shanghai';
+    if (!validTimezone(tz)) return json({ ok: false, error: 'bad timezone' }, 400);
+    await setSetting(env.DB, 'timezone', tz);
+  }
   return json({ ok: true });
 }
 export async function handleChannelsPut(req, env) {
