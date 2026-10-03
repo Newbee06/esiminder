@@ -439,19 +439,14 @@ async function doDelete(id){
     if (d.ok) { toast(t('deleted')); nav('#/esims'); } else toast('❌ error');
   });
 }
-/* ---------- renew ---------- */
-function openRenew(id){
-  var e = window._detail;
-  if (!e || e.id !== id) return;
-  if (!e.cycleDays) { toast(t('needCycle')); return; }
-  var today = new Date().toLocaleDateString('en-CA');
-  var base = e.expiresAt && e.expiresAt >= today ? e.expiresAt : today;
-  var fromToday = !(e.expiresAt && e.expiresAt >= today);
-  var nd = new Date(Date.parse(base) + e.cycleDays * 86400000).toLocaleDateString('en-CA');
+/* ---------- renew (server-authoritative dates) ---------- */
+async function openRenew(id){
+  var pv = await api('POST', '/api/esims/' + encodeURIComponent(id) + '/renew/preview');
+  if (!pv.ok) { toast(pv.error === 'no cycle' ? t('needCycle') : '❌ ' + (pv.error || 'error')); return; }
   var body = '<div class="card" style="box-shadow:none;margin:10px 0;">'
-    + rowline(t('renewCurrent'), esc(e.expiresAt || '—'))
-    + rowline(t('renewCycle'), t('detailCycleDays').replace('{n}', e.cycleDays) + (fromToday ? ' <span class="lbl">' + t('renewFromToday') + '</span>' : ''))
-    + rowline('<b>' + t('renewNew') + '</b>', '<b style="color:var(--accent)">' + nd + '</b>')
+    + rowline(t('renewCurrent'), esc(pv.currentExpiresAt || '—'))
+    + rowline(t('renewCycle'), t('detailCycleDays').replace('{n}', pv.cycleDays) + (pv.fromToday ? ' <span class="lbl">' + t('renewFromToday') + '</span>' : ''))
+    + rowline('<b>' + t('renewNew') + '</b>', '<b style="color:var(--accent)">' + esc(pv.newExpiresAt) + '</b>')
     + '</div>';
   confirmModal(t('renewTitle'), body, t('confirmRenew'), async function(){
     var d = await api('POST', '/api/esims/' + encodeURIComponent(id) + '/renew');
@@ -551,7 +546,9 @@ async function renderNotifications(){
     d.items.forEach(function(n){
       var day = fmtDay(n.createdAt);
       if (day !== lastDay) { h += '<div class="dayhead">' + esc(day) + '</div>'; lastDay = day; }
-      var okc = n.status === 'ok' ? '<span class="okic">✓</span>' : '<span class="failic">✕ ' + t('notifFailed') + '</span>';
+      var okc = n.status === 'ok'
+        ? '<span class="okic">✅ ' + t('notifSent') + '</span>'
+        : '<span class="failic">❌ ' + t('notifFailed') + ' · ' + t('willRetry') + '</span>';
       var title = n.kind === 'test' ? t('kindTest') : t('kindReminder');
       h += '<div class="notif"><span class="nic">' + (n.status === 'ok' ? '📨' : '⚠️') + '</span><div class="nb">'
         + '<div class="nt">' + esc(n.esimName ? n.esimName + ' · ' + title : title) + '</div>'
@@ -624,6 +621,7 @@ async function renderSettings(){
   setView(layout(h, 'settings'));
   segBind('seg_theme', function(v){ THEME = v; localStorage.setItem('esiminder_theme', v); applyTheme(); paintSeg('seg_theme', v); });
   segBind('seg_lang', function(v){ LANG = v; localStorage.setItem('esiminder_lang', v); applyLangAll(); });
+  CH_CLEARED = {};
   paintChannels(d.chStatus);
   var dd = await api('GET', '/api/dashboard');
   if (dd.ok) document.getElementById('s_lastcheck').textContent = dd.lastCheckAt ? fmtDate(dd.lastCheckAt) + ' ' + fmtTime(dd.lastCheckAt) : t('neverChecked');
@@ -639,19 +637,45 @@ function paintSeg(id, v){
   });
 }
 function applyLangAll(){ document.documentElement.lang = LANG === 'zh' ? 'zh-CN' : 'en'; render(); }
+var CH_CLEARED = {};
+var EL_TO_FIELD = {};
+for (var _ck in CH_MAP) { CH_MAP[_ck].forEach(function(p){ EL_TO_FIELD[p[1]] = p[0]; }); }
 function paintChannels(chStatus){
   var el = document.getElementById('chwrap');
   el.innerHTML = CH_DEFS.map(function(c){
     var ok = chStatus[c.k];
     var fs = c.f.map(function(f){
-      return '<label class="f">' + esc(f[2]) + '</label><input id="' + f[0] + '" type="' + f[1] + '" placeholder="' + esc(ok ? t('configured') : f[3]) + '" autocomplete="off">';
+      var elId = f[0], field = EL_TO_FIELD[elId] || elId;
+      var ck = c.k + '__' + field;
+      var cleared = !!CH_CLEARED[ck];
+      var h = '<label class="f">' + esc(f[2]);
+      if (ok) h += ' <a href="javascript:void(0)" data-clear="' + ck + '" style="font-size:12px;">' + (cleared ? t('cancel') : t('clear')) + '</a>';
+      h += '</label><input id="' + elId + '" type="' + f[1] + '" placeholder="' + esc(ok ? '✓ ' + t('configured') : f[3]) + '" autocomplete="off"' + (cleared ? ' disabled' : '') + '>';
+      if (cleared) h += '<div style="color:var(--red);font-size:12px;margin:2px 0 6px;">⚠️ ' + t('clear') + '</div>';
+      return h;
     }).join('');
     return '<div class="ch"><h4>' + c.ic + ' ' + t(CH_LABEL[c.k]) + (ok ? ' <span class="st">✓ ' + t('configured') + '</span>' : '') + '</h4>' + fs + '</div>';
   }).join('');
+  Array.prototype.forEach.call(el.querySelectorAll('a[data-clear]'), function(a){
+    a.addEventListener('click', function(){
+      var ck = a.getAttribute('data-clear');
+      if (CH_CLEARED[ck]) delete CH_CLEARED[ck]; else CH_CLEARED[ck] = true;
+      paintChannels(chStatus);
+    });
+  });
 }
 function collectChannels(){
   var o = {};
-  for (var k in CH_MAP) { o[k] = {}; CH_MAP[k].forEach(function(p){ o[k][p[0]] = document.getElementById(p[1]).value.trim(); }); }
+  for (var k in CH_MAP) {
+    o[k] = {};
+    CH_MAP[k].forEach(function(p){
+      var field = p[0], elId = p[1];
+      var el = document.getElementById(elId);
+      if (CH_CLEARED[k + '__' + field]) o[k][field + '__clear'] = true;
+      else if (el && el.value.trim()) o[k][field] = el.value.trim();
+      // blank + not cleared -> omitted; backend keeps the existing value
+    });
+  }
   return o;
 }
 async function doSaveSettings(){
