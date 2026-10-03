@@ -9,6 +9,7 @@
 // Legacy KV remindNotified is migrated once into D1, then no longer read.
 import { listEsims, getSettings, parseThresholds, daysUntil, todayInTZ } from './db.js';
 import { getChannels, buildReminderMessage, fanout, CHANNELS, isChannelConfigured } from './notify.js';
+import { migrateV21IfNeeded } from './migrate.js';
 
 const STALE_SENDING_MS = 3600 * 1000;
 
@@ -153,6 +154,9 @@ export async function handleCron(env) {
 
 export async function runScheduled(env) {
   try {
+    // V2.1 tables must exist before the first cron runs, even if no HTTP
+    // request has triggered migration yet.
+    await migrateV21IfNeeded(env);
     const res = await handleCron(env);
     const st = await readState(env);
     st.lastCheckAt = Date.now();
