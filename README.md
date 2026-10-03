@@ -44,8 +44,8 @@ wrangler deploy
 
 ## 🆕 V2.1 更新
 
-- **续费幂等**：`POST /api/esims/:id/renew` 支持 `requestId`，相同 ID 重复提交只生效一次；续期写入使用 D1 batch 原子执行
-- **并发续费保护**：乐观锁（`UPDATE ... WHERE expiresAt=旧值`），冲突返回 `409`，前端提示刷新重试
+- **续费幂等**：`POST /api/esims/:id/renew` 支持 `requestId`，相同 ID 重复提交只生效一次；`requestId` 绑定首次使用的 eSIM，跨 eSIM 重用返回 `409`
+- **续费原子事务**：单个 D1 batch 内 `INSERT renewal_records ... SELECT ... WHERE expiresAt=旧值` + `UPDATE esims ... WHERE expiresAt=旧值` + 条件 `INSERT renew_idempotency`，三者要么全成功要么全回滚；并发不同 `requestId` 恰好一个成功、另一个 `409`
 - **通知去重进 D1**：新增 `notification_dedup` 表（`pending → sending → sent/failed`），并发 Cron 通过 claim 机制不会重复推送，失败自动重试
 - **严格日期校验**：拒绝 `2024-02-30`、`2025-13-01` 等非法日期
 - **配置标准化**：`reminderDays` 自动去重/排序/上限；`timezone` 服务端验证，非法返回 400
