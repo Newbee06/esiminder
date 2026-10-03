@@ -47,34 +47,38 @@
 
 ## 🖥️ 界面预览
 
-> 📸 Screenshots coming soon.
->
-> 以下截图将在生产环境 UI 就绪后补充，存放于 `docs/screenshots/`。
-
 ### Dashboard
 
-<!-- Screenshot: docs/screenshots/dashboard.png
-     推荐 1440×900（16:10）。展示：eSIM 数量 / 即将到期 / 已过期 / 最近通知 / eSIM 列表。不要裁掉顶部导航。 -->
+<p align="center">
+  <img src="./docs/screenshots/dashboard.png" alt="eSIMinder Dashboard" width="900">
+</p>
 
 ### eSIM 详情
 
-<!-- Screenshot: docs/screenshots/esim-detail.png
-     推荐 1440×900。展示：基础信息 / 到期日期 / 状态 / 续费周期 /「前往续费」/「续期」按钮。 -->
+<p align="center">
+  <img src="./docs/screenshots/esim-detail.png" alt="eSIM 详情" width="900">
+</p>
 
 ### 一键续期
 
-<!-- Screenshot: docs/screenshots/renewal.png
-     推荐 1440×900。展示：当前到期日期 / 新到期日期 / 续费周期 / 确认续期弹窗。 -->
+<p align="center">
+  <img src="./docs/screenshots/renewal.png" alt="续期确认" width="900">
+</p>
 
 ### 通知中心
 
-<!-- Screenshot: docs/screenshots/notifications.png
-     推荐 1440×900。展示：通知历史 / 通知状态 / 成功·失败 / 重发按钮。 -->
+<p align="center">
+  <img src="./docs/screenshots/notifications.png" alt="通知通道设置" width="900">
+</p>
 
 ### 移动端
 
 <!-- Screenshot: docs/screenshots/mobile.png
-     推荐 390×844。展示：手机底部 Tab Bar / Dashboard / eSIM 卡片 / 到期状态。 -->
+     推荐 390×844。展示：手机底部 Tab Bar / Dashboard / eSIM 卡片 / 到期状态。
+     截图就绪后替换为：
+     <p align="center">
+       <img src="./docs/screenshots/mobile.png" alt="移动端界面" width="320">
+     </p> -->
 
 ## 👤 适合谁
 
