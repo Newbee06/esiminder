@@ -140,7 +140,6 @@ try {
   document.head.appendChild(_styleEl);
 } catch (_e) {}
 /* ---------- utils ---------- */
-function esc(s){ return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 async function api(method, path, body){
   var r = await fetch(path, { method: method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
   if (r.status === 401) { location.href = '/'; return { ok: false }; }
