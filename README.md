@@ -24,48 +24,42 @@ eSIM lifecycle manager: track expiry → auto reminders → one-tap renewal. Nev
 
 ## 🚀 部署 Deploy
 
-### 一键部署
+### 方案 A：一键部署（推荐）
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder)
 
 1. 点击上面的 **Deploy to Cloudflare** 按钮
-2. 登录你的 Cloudflare 账号
-3. 选择 Cloudflare Account
-4. Cloudflare 为该部署创建自己的 D1 数据库
-5. Cloudflare 为该部署创建自己的 KV 命名空间
-6. 配置 `ADMIN_TOKEN`（后台登录密码，自己设定，不要用别人的）
-7. 完成 Worker 部署
-8. 打开 Worker URL（`https://esiminder.你的子域名.workers.dev`）
-9. 使用 `ADMIN_TOKEN` 登录后台
-10. 首次登录后去「设置」页修改密码（新密码存 KV，优先级高于 Secret）
+2. 登录 Cloudflare
+3. 选择自己的 Account
+4. 配置 `ADMIN_TOKEN`（后台登录密码，自己设定）
+5. Cloudflare 为该部署创建自己的 D1/KV
+6. 完成 Worker 部署
+7. 打开 Worker URL（`https://esiminder.你的子域名.workers.dev`）
+8. 使用 `ADMIN_TOKEN` 登录后台，首次登录后去「设置」页修改密码（新密码存 KV，优先级高于 Secret）
 
-> 每次通过 Deploy Button 创建的部署使用自己的 D1/KV，不使用仓库作者的资源。
+> 每次通过 Deploy Button 创建的部署使用部署者自己账号中的 D1/KV，不使用仓库作者的资源。
+> `ADMIN_TOKEN` 由部署者自己设置，不会写入 GitHub。
 > 数据库表（`esims` / `renewal_records` / `notifications` / `settings` / `notification_dedup` / `renew_idempotency`）首次请求时自动创建；V1→V2、V2.0→V2.1 迁移自动执行。
 > 定时任务（每天北京时间 09:00 提醒）随 Worker 一起部署。
 
-说明（依据 [Cloudflare 官方 Deploy Button 文档](https://developers.cloudflare.com/workers/platform/deploy-buttons/)与 [Wrangler 自动供应文档](https://developers.cloudflare.com/workers/wrangler/configuration/)）：
-
-- ✅ D1、KV 在部署时自动创建并绑定，无需手动建库、无需改代码、无需填 ID
-- ✅ `ADMIN_TOKEN` 在部署配置页由你亲自填写，不会写入仓库
-- ⚠️ 需要手动的一步：部署后打开 Worker URL 登录（见上第 8–10 步）
-
-### 🛠️ 手动部署
+### 方案 B：手动部署
 
 ```bash
-# 1. 创建属于你自己的 KV 和 D1
-wrangler kv:namespace create CFG
-wrangler d1 create esiminder-db
+npm install
+
+# 手动创建属于你自己的 KV 和 D1（也可跳过，wrangler deploy 会自动供应）
+npx wrangler kv namespace create CFG
+npx wrangler d1 create esiminder-db
 ```
 
-创建后，如果 Cloudflare CLI 要求把返回的 ID 写入 Wrangler 配置，请把对应 ID 写入你本地的 `wrangler.toml`（`[[kv_namespaces]]` 的 `id`、`[[d1_databases]]` 的 `database_id`）。注意：不要把你自己的 ID 提交回公开仓库。
+如果 CLI 返回了资源 ID，只写入你自己的本地 `wrangler.toml`（`[[kv_namespaces]]` 的 `id`、`[[d1_databases]]` 的 `database_id`），不要提交真实 ID 到公开仓库。
 
 ```bash
-# 2. 设置后台密码（Secret，不在代码里、不在仓库里）
-wrangler secret put ADMIN_TOKEN
+# 设置后台密码（Secret，不在代码里、不在仓库里）
+npx wrangler secret put ADMIN_TOKEN
 
-# 3. 部署（含每天 09:00 北京时间的 Cron 提醒）
-#    首次部署时 Wrangler 会自动供应 D1/KV（若上一步未手动创建）
-wrangler deploy
+# 部署（含每天 09:00 北京时间的 Cron 提醒）
+npx wrangler deploy
 ```
 
 首次打开网页用 `ADMIN_TOKEN` 的值登录，系统会强制你修改默认密码。
