@@ -1,0 +1,13 @@
+name = "esiminder"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# KV namespace for all config & secrets (managed in the web UI, never in code).
+# Create your own: wrangler kv:namespace create CFG
+[[kv_namespaces]]
+binding = "CFG"
+id = "1b95c6c5059c4daeb7cf1d2955c5a4ec"
+
+# Daily check at 09:00 Beijing time (01:00 UTC)
+[triggers]
+crons = ["0 1 * * *"]
