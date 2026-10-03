@@ -7,8 +7,8 @@
 <h1 align="center">eSIMinder 🔔</h1>
 
 <p align="center">
-  <strong>Personal eSIM lifecycle manager</strong><br>
-  Track expiry · Get reminders · Renew in one click
+  <strong>Personal eSIM Lifecycle Manager</strong><br>
+  Manage eSIMs · Track expiry · Get reminders · Renew in one click
 </p>
 
 <p align="center">
@@ -21,47 +21,40 @@
 
 ---
 
-Never lose an eSIM to a forgotten renewal again. eSIMinder tracks expiry dates, reminds you before they lapse, and renews in one click.
+> Never let a forgotten renewal leave your eSIM unusable when you need it most.
 
-## ✨ Features
+## ✨ Core Features
 
 ### 📱 eSIM Management
 
-- Full profile: name / country / region / carrier / phone / activation & expiry dates
-- Renewal cycle, provider, renewal URL (opens in a new tab from the detail page)
-- Tags (iOS pill style), search, status filters
-- Auto-computed status: 🟢active 🟡expiring soon 🔴expired ⚪not activated ⚫disabled
+Manage name, country / region, carrier, phone number, activation date, expiry date, renewal cycle, and renewal links in one place. Tags, search, and status filters included; statuses are computed automatically.
 
-### 🔄 Renewal
+### 🔔 Expiry Reminders
 
-- One-click renewal with a confirmation dialog showing the new expiry date
-- Expired cards renew from today (`max(old expiry, today) + cycle`)
-- Server-side renewal preview, renewal history recorded automatically
-- `requestId` idempotency: duplicate submissions apply only once; concurrency-safe
+Reminders at 7 / 3 / 1 / 0 days before expiry, customizable. 7 notification channels: Telegram, WeCom, DingTalk, Feishu, Bark, ServerChan, and Email (Resend).
 
-### 🔔 Notifications
+### 🔄 One-Click Renewal
 
-7 channels, configured and tested from the admin UI:
+New expiry dates computed automatically. Supports renewing expired cards, renewal preview, renewal history, and `requestId` idempotency.
 
-Telegram · WeCom · DingTalk · Feishu · Bark · ServerChan · Resend Email
+### ☁️ Cloudflare Deployment
 
-- Reminders at 7 / 3 / 1 / 0 days before expiry (customizable), deduplicated
-- Every push is logged; failed ones can be retried with one click
+Built on Cloudflare Workers + D1 + KV. No servers to maintain — deploy to your own Cloudflare account.
 
-### 🎨 UI
+> **Design philosophy**
+>
+> eSIMinder focuses on personal eSIM lifecycle management. No sign-up, no multi-user, no payments, no finance features.
 
-- iOS-style design, Light / Dark / System themes
-- Bottom Tab Bar on mobile, left Sidebar on desktop
-- Chinese / English, Chinese by default
+## 👤 Who It's For
 
-### 🔐 Security
+- Travelers who regularly use overseas eSIMs
+- Users managing multiple eSIMs at once
+- Anyone who needs to track plan expiry dates long-term
+- Anyone who doesn't want an eSIM to die from a forgotten renewal
 
-- 7-day login sessions, 15-minute lockout after 5 failed attempts
-- Forced password change on first login
-- HttpOnly / Secure / SameSite cookies
-- Secrets live in KV / D1, never in GitHub
+## 🎨 Interface
 
-**Out of scope**: traffic stats, finance, ICCID/EID/APN, sign-up, multi-user, memberships, payments.
+iOS-style design with Light / Dark / System themes; bottom Tab Bar on mobile, left Sidebar on desktop; Chinese / English bilingual.
 
 ## 🚀 Deployment
 
@@ -69,63 +62,45 @@ Telegram · WeCom · DingTalk · Feishu · Bark · ServerChan · Resend Email
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder)
 
-1. Click **Deploy to Cloudflare**
-2. Log in to Cloudflare and pick your own Account
-3. Set `ADMIN_TOKEN` (your admin password)
-4. Cloudflare provisions a fresh D1 database and KV namespace for this deployment
-5. Finish deployment and open your Worker URL
-6. Log in with `ADMIN_TOKEN`, then change your password in Settings
+1. Click **Deploy to Cloudflare**, log in and pick your own Cloudflare Account
+2. Set `ADMIN_TOKEN` (your admin password)
+3. Cloudflare provisions a fresh D1 / KV for this deployment and deploys the Worker
+4. Open your Worker URL, log in with `ADMIN_TOKEN`, and change your password after first login
 
-> Every deployment uses D1 / KV in the deployer's own Cloudflare account — never the repo author's resources.
-> `ADMIN_TOKEN` is set by you and never committed to GitHub.
-> Tables are created automatically on first request, migrations run automatically, Cron fires daily at 09:00 Beijing time.
+> Every deployment uses D1 / KV in the deployer's own account — never the repo author's resources. `ADMIN_TOKEN` is never committed to GitHub.
 
 ### B. Manual deployment
 
 ```bash
 npm install
-
-# Optional: create resources manually (wrangler auto-provisions on deploy if skipped)
-npx wrangler kv namespace create CFG
-npx wrangler d1 create esiminder-db
-
-# Set the admin password
+npx wrangler kv namespace create CFG   # optional: auto-provisioned on deploy
+npx wrangler d1 create esiminder-db    # optional: auto-provisioned on deploy
 npx wrangler secret put ADMIN_TOKEN
-
-# Deploy
 npx wrangler deploy
 ```
 
-> If the CLI returns resource IDs, write them only to your local `wrangler.toml` — never commit real IDs to a public repo.
+> If the CLI returns resource IDs, write them only to your local `wrangler.toml` — never commit them to a public repo.
 
 ## 🆕 What's New in V2.1
 
 | Feature | Description |
 |---|---|
 | Renewal Idempotency | `requestId` prevents duplicate renewals |
-| Atomic Renewal | Single D1 batch transaction — all three writes succeed or roll back together |
-| Notification Dedup | Deduplication moved into D1 (`pending` → `sending` → `sent` / `failed`) |
-| Retry | Automatic retry on failure, manual retry with one click |
-| Date Validation | Rejects invalid dates like `2024-02-30` |
-| Config Validation | `reminderDays` normalized, `timezone` validated server-side |
-| Timeout | 10-second timeout on all 7 channels |
+| Atomic Renewal | Single D1 transaction — all or nothing |
+| Notification Dedup | Dedup state moved into D1, automatic retry on failure |
+| Date Validation | Rejects invalid dates |
+| Config Validation | Reminder days normalized, timezone validated server-side |
+| Notification Timeout | 10-second timeout on all channels |
 
-<details>
-<summary>Technical Details</summary>
+## 🏗️ Architecture
 
-- Renewal: `INSERT renewal_records ... SELECT ... WHERE expiresAt=old` + `UPDATE esims ... WHERE expiresAt=old` + conditional `INSERT renew_idempotency` in one D1 batch. Concurrent renewals with different `requestId`s: exactly one wins, the other gets `409`; reusing a `requestId` across eSIMs returns `409`.
-- Notifications: `notification_dedup` table with a claim mechanism — concurrent Crons never double-send; stale `sending` rows are reclaimed; legacy KV dedup state migrates automatically.
+Cloudflare Workers + D1 + KV. No other dependencies.
 
-</details>
+- Tables are created automatically on first request — no manual SQL
+- V1 → V2 and V2.0 → V2.1 migrations run automatically (idempotent)
+- Cron `0 1 * * *` checks expiries and sends reminders daily at 09:00 Beijing time
 
-## 🔄 Migration
-
-> No manual database migration required. Migrations run automatically on first request or Cron.
-
-- V1 → V2: KV `esims` auto-migrated into D1 (idempotent)
-- V2.0 → V2.1: `notification_dedup` / `renew_idempotency` tables auto-created (`CREATE TABLE IF NOT EXISTS`)
-
-## 🗄️ Architecture
+## 🗄️ Data Model
 
 ```
 D1
@@ -143,12 +118,6 @@ KV
 ├── login:rl:*
 └── migration markers
 ```
-
-Cloudflare Workers + D1 + KV. No other dependencies, no Durable Objects.
-
-## ⏰ Cron
-
-`0 1 * * *` in `wrangler.toml` — daily at 09:00 Beijing time (01:00 UTC). Checks expiring eSIMs and pushes reminders per the 7 / 3 / 1 / 0-day schedule with deduplication.
 
 ## 📡 API
 
@@ -168,13 +137,7 @@ Cloudflare Workers + D1 + KV. No other dependencies, no Durable Objects.
 npm test
 ```
 
-Current status:
-
-```
-75 passed · 0 failed
-```
-
-`tests/run.mjs` mocks D1 with `node:sqlite` and covers renewal idempotency & concurrency, notification dedup & retry, date & config validation, Cron, migrations, and deployment config.
+Covers: Renewal Idempotency, Concurrent Renewal, Notification Deduplication, Notification Retry, Date Validation, Configuration Validation, Cron, Migration, Deployment Configuration.
 
 ## ⚠️ Known Notes
 
