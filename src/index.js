@@ -20,6 +20,7 @@ const ROUTES = [
   ['PUT', '/api/esims/:id', api.handleEsimUpdate],
   ['DELETE', '/api/esims/:id', api.handleEsimDelete],
   ['POST', '/api/esims/:id/renew', api.handleEsimRenew],
+  ['POST', '/api/esims/:id/renew/preview', api.handleEsimRenewPreview],
   ['GET', '/api/notifications', api.handleNotifList],
   ['POST', '/api/notifications/test', api.handleNotifTest],
   ['POST', '/api/notifications/:id/retry', api.handleNotifRetry],
