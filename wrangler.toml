@@ -6,7 +6,7 @@ compatibility_date = "2024-01-01"
 # Create your own: wrangler kv:namespace create CFG
 [[kv_namespaces]]
 binding = "CFG"
-id = "1b95c6c5059c4daeb7cf1d2955c5a4ec"
+id = "6d5dd1455ef3446db547ee5f88aba953"
 
 # Daily check at 09:00 Beijing time (01:00 UTC)
 [triggers]
