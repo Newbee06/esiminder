@@ -47,34 +47,38 @@ Built on Cloudflare Workers + D1 + KV. No servers to maintain — deploy to your
 
 ## 🖥️ Screenshots
 
-> 📸 Screenshots coming soon.
->
-> Captures will be added once the production UI is ready, under `docs/screenshots/`.
-
 ### Dashboard
 
-<!-- Screenshot: docs/screenshots/dashboard.png
-     Recommended 1440×900 (16:10). Show: eSIM count / expiring soon / expired / recent notifications / eSIM list. Keep the top navigation visible. -->
+<p align="center">
+  <img src="./docs/screenshots/dashboard.png" alt="eSIMinder Dashboard" width="900">
+</p>
 
 ### eSIM Detail
 
-<!-- Screenshot: docs/screenshots/esim-detail.png
-     Recommended 1440×900. Show: basic info / expiry date / status / renewal cycle / "renewal link" / "renew" buttons. -->
+<p align="center">
+  <img src="./docs/screenshots/esim-detail.png" alt="eSIM Detail" width="900">
+</p>
 
 ### One-Click Renewal
 
-<!-- Screenshot: docs/screenshots/renewal.png
-     Recommended 1440×900. Show: current expiry / new expiry / renewal cycle / confirmation dialog. -->
+<p align="center">
+  <img src="./docs/screenshots/renewal.png" alt="Renewal Confirmation" width="900">
+</p>
 
 ### Notification Center
 
-<!-- Screenshot: docs/screenshots/notifications.png
-     Recommended 1440×900. Show: notification history / status / success & failure / retry button. -->
+<p align="center">
+  <img src="./docs/screenshots/notifications.png" alt="Notification Channels" width="900">
+</p>
 
 ### Mobile
 
 <!-- Screenshot: docs/screenshots/mobile.png
-     Recommended 390×844. Show: bottom Tab Bar / Dashboard / eSIM cards / expiry status. -->
+     Recommended 390×844. Show: bottom Tab Bar / Dashboard / eSIM cards / expiry status.
+     Replace with once the capture is ready:
+     <p align="center">
+       <img src="./docs/screenshots/mobile.png" alt="Mobile UI" width="320">
+     </p> -->
 
 ## 👤 Who It's For
 
