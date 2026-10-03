@@ -24,19 +24,40 @@ eSIM lifecycle manager: track expiry → auto reminders → one-tap renewal. Nev
 
 ## 🚀 部署 Deploy
 
-### 部署说明
+### 一键部署
 
-仓库 `wrangler.toml` 中的 KV/D1 ID 是作者自己的资源，他人 fork 后需要替换成自己的：
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder)
+
+1. 点击上面的 **Deploy to Cloudflare** 按钮
+2. 登录你的 Cloudflare 账号
+3. 选择要使用的账号
+4. 在配置页确认 Worker 名称、D1 数据库名、KV 命名空间名（Cloudflare 会在**你的账号**里自动创建全新的 D1 + KV，不会碰到作者的资源），并填写 `ADMIN_TOKEN`（后台登录密码）
+5. 点确认，Cloudflare 自动构建并部署
+6. 部署完成后打开你的 Worker 地址（`https://esiminder.你的子域名.workers.dev`）
+7. 用第 4 步设置的 `ADMIN_TOKEN` 登录后台
+8. 首次登录后建议去「设置」页改成你自己的密码（新密码存 KV，优先级高于 Secret）
+
+说明（依据 [Cloudflare 官方 Deploy Button 文档](https://developers.cloudflare.com/workers/platform/deploy-buttons/)）：
+
+- ✅ D1、KV 由 Cloudflare 在部署时自动创建并绑定，无需手动建库、无需改代码
+- ✅ 定时任务（每天北京时间 09:00 提醒）随 Worker 一起部署，`wrangler.toml` 的 `[triggers]` 已配置好
+- ✅ 数据库表（`esims` / `renewal_records` / `notifications` / `settings` / `notification_dedup` / `renew_idempotency`）首次请求时自动创建；V1→V2、V2.0→V2.1 迁移逻辑保留，自动执行
+- ⚠️ 需要手动的一步：部署后打开 Worker URL，用 `ADMIN_TOKEN` 登录（密码不会写进仓库）
+
+### 🛠️ 手动部署
 
 ```bash
-# 1. 创建 KV 和 D1，把返回的 ID 填入 wrangler.toml
+# 1. 安装依赖（仅跑测试用，部署不需要构建）
+npm install
+
+# 2. 创建属于你自己的 KV 和 D1，把返回的 ID 填入 wrangler.toml
 wrangler kv:namespace create CFG
 wrangler d1 create esiminder-db
 
-# 2. 设置后台密码（Secret，不在代码里）
+# 3. 设置后台密码（Secret，不在代码里、不在仓库里）
 wrangler secret put ADMIN_TOKEN
 
-# 3. 部署
+# 4. 部署（含每天 09:00 北京时间的 Cron 提醒）
 wrangler deploy
 ```
 
