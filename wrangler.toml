@@ -2,11 +2,20 @@ name = "esiminder"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
-# KV namespace for all config & secrets (managed in the web UI, never in code).
-# Create your own: wrangler kv:namespace create CFG
+# KV: sessions, channel secrets, notification dedup state.
+# Create: wrangler kv:namespace create CFG  (then put the id below)
+# The "Deploy to Cloudflare" button provisions this automatically.
 [[kv_namespaces]]
 binding = "CFG"
-id = "6d5dd1455ef3446db547ee5f88aba953"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# D1: business data (esims, renewal_records, notifications, settings).
+# Create: wrangler d1 create esiminder-db  (then put the id below)
+# The "Deploy to Cloudflare" button provisions this automatically.
+[[d1_databases]]
+binding = "DB"
+database_name = "esiminder-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
 
 # Daily check at 09:00 Beijing time (01:00 UTC)
 [triggers]
