@@ -119,7 +119,7 @@ console.log('-- 续费 --');
   ok('cycleDays=0 拒绝', !r.ok && r.error === 'no cycle', JSON.stringify(r));
 }
 {
-  // 幂等：同一 requestId 提交两次
+  // 幂等：同一 requestId 提交两次（顺序）
   const env = await setupEnv();
   await addEsim(env, 'e1', { expiresAt: shift(10) });
   const req = () => authed('POST', '/api/esims/e1/renew', { requestId: 'dup-1' });
@@ -132,7 +132,7 @@ console.log('-- 续费 --');
   ok('重复 requestId：expiresAt 只延长一次', row.expiresAt === shift(40), row.expiresAt);
 }
 {
-  // 快速重复请求（不同 requestId 是两次独立续费；相同则幂等）
+  // 测试 2：相同 requestId 并发
   const env = await setupEnv();
   await addEsim(env, 'e1', { expiresAt: shift(10) });
   const [a, b] = await Promise.all([
@@ -140,17 +140,35 @@ console.log('-- 续费 --');
     api.handleEsimRenew(authed('POST', '/api/esims/e1/renew', { requestId: 'race-1' }), env, { id: 'e1' }).then(r => r.json())
   ]);
   const cnt = await env.DB.prepare('SELECT COUNT(*) c FROM renewal_records').bind().first();
-  ok('并发相同 requestId：只续费一次', a.ok && b.ok && cnt.c === 1, `records=${cnt.c}`);
+  ok('测试2 相同 requestId 并发：只产生一次续费', a.ok && b.ok && cnt.c === 1, `records=${cnt.c} a=${a.newExpiresAt} b=${b.newExpiresAt}`);
+  ok('测试2 相同 requestId 并发：两次结果一致', a.newExpiresAt === b.newExpiresAt && a.newExpiresAt === shift(40));
 }
 {
-  // 原子性：batch 中任一语句失败则整体回滚（用非法 requestId 触发唯一约束验证路径存在）
+  // 测试 1：不同 requestId 并发续费 -> 一个成功，一个 409
   const env = await setupEnv();
   await addEsim(env, 'e1', { expiresAt: shift(10) });
-  await api.handleEsimRenew(authed('POST', '/api/esims/e1/renew', { requestId: 'atomic-1' }), env, { id: 'e1' });
-  const before = await env.DB.prepare('SELECT expiresAt FROM esims WHERE id=?').bind('e1').first();
-  const r = await (await api.handleEsimRenew(authed('POST', '/api/esims/e1/renew', { requestId: 'atomic-1' }), env, { id: 'e1' })).json();
-  const after = await env.DB.prepare('SELECT expiresAt FROM esims WHERE id=?').bind('e1').first();
-  ok('原子性：重复提交不改变已提交状态', r.ok && before.expiresAt === after.expiresAt, `${before.expiresAt} vs ${after.expiresAt}`);
+  const [a, b] = await Promise.all([
+    api.handleEsimRenew(authed('POST', '/api/esims/e1/renew', { requestId: 'race-a' }), env, { id: 'e1' }).then(async r => ({ status: r.status, body: await r.json() })),
+    api.handleEsimRenew(authed('POST', '/api/esims/e1/renew', { requestId: 'race-b' }), env, { id: 'e1' }).then(async r => ({ status: r.status, body: await r.json() }))
+  ]);
+  const cnt = await env.DB.prepare('SELECT COUNT(*) c FROM renewal_records').bind().first();
+  const row = await env.DB.prepare('SELECT expiresAt FROM esims WHERE id=?').bind('e1').first();
+  const statuses = [a.status, b.status].sort().join(',');
+  ok('测试1 不同 requestId 并发：一个成功一个409', statuses === '200,409', statuses);
+  ok('测试1 不同 requestId 并发：renewal_records=1', cnt.c === 1, `records=${cnt.c}`);
+  ok('测试1 不同 requestId 并发：expiresAt 只延长一次', row.expiresAt === shift(40), row.expiresAt);
+}
+{
+  // 测试 3：requestId 跨 eSIM 重用 -> 409
+  const env = await setupEnv();
+  await addEsim(env, 'eA', { expiresAt: shift(10) });
+  await addEsim(env, 'eB', { expiresAt: shift(10) });
+  const rA = await (await api.handleEsimRenew(authed('POST', '/api/esims/eA/renew', { requestId: 'abc' }), env, { id: 'eA' }));
+  const rB = await (await api.handleEsimRenew(authed('POST', '/api/esims/eB/renew', { requestId: 'abc' }), env, { id: 'eB' }));
+  const bB = await rB.json();
+  ok('测试3 跨 eSIM 重用 requestId：拒绝', rA.status === 200 && rB.status === 409 && bB.error.includes('another esim'), `A=${rA.status} B=${rB.status}`);
+  const rowB = await env.DB.prepare('SELECT expiresAt FROM esims WHERE id=?').bind('eB').first();
+  ok('测试3 跨 eSIM 重用：B 未被续费', rowB.expiresAt === shift(10), rowB.expiresAt);
 }
 
 // ================= 3. 配置 =================
@@ -308,7 +326,41 @@ const CH3 = { telegram: { botToken: 't', chatId: 'c' }, bark: { key: 'k' }, emai
   ok('KV 迁移：未成功渠道继续发送', r.due >= 1 && barkLogs.c >= 1, `bark_logs=${barkLogs.c}`);
 }
 
-// ================= 6. API 路由 =================
+// ================= 6. V2.0 -> V2.1 migration =================
+console.log('-- V2.1 migration --');
+const migMod = await import('../src/migrate.js');
+{
+  // 测试 4：模拟 V2.0 老用户（migrated_v2=1，无 migrated_v21，无新表）
+  const env = { CFG: mockKV({ migrated_v2: '1' }), DB: makeD1(), ADMIN_TOKEN: 'x' };
+  // 故意不建新表，模拟老数据库
+  await env.DB.prepare('CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)').bind().run();
+  await env.DB.prepare('CREATE TABLE esims (id TEXT PRIMARY KEY, name TEXT)').bind().run();
+  await env.DB.prepare("INSERT INTO esims VALUES ('old1', '老卡')").bind().run();
+  const r = await migMod.migrateV21IfNeeded(env);
+  const t1 = await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='notification_dedup'").bind().first();
+  const t2 = await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='renew_idempotency'").bind().first();
+  const marker = await env.CFG.get('migrated_v21');
+  const kept = await env.DB.prepare("SELECT name FROM esims WHERE id='old1'").bind().first();
+  ok('测试4 V2.0升级：新表自动创建', r.ok && t1 && t2, JSON.stringify(r));
+  ok('测试4 V2.0升级：标记写入', marker === '1');
+  ok('测试4 V2.0升级：原有数据不丢失', kept && kept.name === '老卡');
+}
+{
+  // 测试 5：重复执行 migration
+  const env = { CFG: mockKV({ migrated_v2: '1' }), DB: makeD1(), ADMIN_TOKEN: 'x' };
+  const r1 = await migMod.migrateV21IfNeeded(env);
+  const r2 = await migMod.migrateV21IfNeeded(env);
+  ok('测试5 migration 重复执行：都成功', r1.ok && r2.ok, `${r1.migrated}/${r2.migrated}`);
+  ok('测试5 migration 重复执行：第二次跳过', r2.migrated === false);
+  // cron 路径也能触发
+  const env2 = { CFG: mockKV({ migrated_v2: '1' }), DB: makeD1(), ADMIN_TOKEN: 'x' };
+  await dbm.ensureSchema(env2.DB);
+  await cronMod.runScheduled(env2);
+  const m2 = await env2.CFG.get('migrated_v21');
+  ok('测试5 Cron 路径完成 V2.1 migration', m2 === '1');
+}
+
+// ================= 7. API 路由 =================
 console.log('-- API 路由 --');
 {
   const worker = (await import('../src/index.js')).default;
