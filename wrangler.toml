@@ -2,21 +2,34 @@ name = "esiminder"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
+# ---------------------------------------------------------------------------
+# Cloudflare resources (KV + D1)
+#
+# "Deploy to Cloudflare" button (see README):
+#   Cloudflare reads this file, provisions BRAND-NEW KV namespace and D1
+#   database in YOUR account, and rewrites the ids below in YOUR forked repo.
+#   You will never touch the original author's resources.
+#
+# Manual deploy (wrangler CLI):
+#   1. wrangler kv:namespace create CFG        -> put the id below
+#   2. wrangler d1 create esiminder-db        -> put the database_id below
+#   3. wrangler secret put ADMIN_TOKEN
+#   4. wrangler deploy
+# ---------------------------------------------------------------------------
+
 # KV: sessions, channel secrets, notification dedup state.
-# Create: wrangler kv:namespace create CFG  (then put the id below)
-# The "Deploy to Cloudflare" button provisions this automatically.
 [[kv_namespaces]]
 binding = "CFG"
 id = "6d5dd1455ef3446db547ee5f88aba953"
 
-# D1: business data (esims, renewal_records, notifications, settings).
-# Create: wrangler d1 create esiminder-db  (then put the id below)
-# The "Deploy to Cloudflare" button provisions this automatically.
+# D1: business data (esims, renewal_records, notifications, settings,
+#     notification_dedup, renew_idempotency). Tables are created automatically
+#     on first request by ensureSchema() in src/db.js — no manual SQL needed.
 [[d1_databases]]
 binding = "DB"
 database_name = "esiminder-db"
 database_id = "e2f07e02-958b-4566-b62f-9a3c32058aef"
 
-# Daily check at 09:00 Beijing time (01:00 UTC)
+# Daily check at 09:00 Beijing time (01:00 UTC). Preserved on every deploy.
 [triggers]
 crons = ["0 1 * * *"]
