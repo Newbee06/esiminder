@@ -6,7 +6,7 @@ eSIM lifecycle manager: track expiry → auto reminders → one-tap renewal. Nev
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder)
 
-## ✨ V2.0 功能 Features
+## ✨ V2.1 功能 Features
 
 - 📱 **eSIM 全生命周期管理**：名称 / 国家 / 地区 / 运营商 / 手机号 / 激活日 / 到期日 / 续期周期 / 续费平台 / 续费地址 / 标签 / 备注
 - 🔄 **一键续期**：确认弹窗显示新到期日；已过期的卡从今天起算（`max(旧到期, 今天) + 周期`），不会得到过去的日期
@@ -26,14 +26,12 @@ eSIM lifecycle manager: track expiry → auto reminders → one-tap renewal. Nev
 
 ## 🚀 部署 Deploy
 
-### 一键部署（推荐）
+### 部署说明
 
-点上面的 **Deploy to Cloudflare** 按钮，按向导操作即可（自动创建 KV 和 D1）。
-
-### 手动部署
+仓库 `wrangler.toml` 中的 KV/D1 ID 是作者自己的资源，他人 fork 后需要替换成自己的：
 
 ```bash
-# 1. 创建 KV 和 D1，填入 wrangler.toml
+# 1. 创建 KV 和 D1，把返回的 ID 填入 wrangler.toml
 wrangler kv:namespace create CFG
 wrangler d1 create esiminder-db
 
@@ -56,9 +54,11 @@ renewal_records(id, esimId, renewedAt, days, oldExpiresAt, newExpiresAt)
 notifications(id, createdAt, esimId, esimName, kind, daysLeft, channel,
               status, error, title, text)
 settings(key, value)   -- reminderDays / notifLang / theme / timezone / pwChanged
+notification_dedup(esim_id, threshold, channel, status, created_at, updated_at)  -- V2.1 通知去重
+renew_idempotency(request_id, esim_id, created_at, response)  -- V2.1 续费幂等
 ```
 
-KV 继续用于：`channels`（渠道密钥）、`admin_token`、`sess:*`（会话）、`state`（去重）、`migrated_v2`。
+KV 用于：`channels`（渠道密钥）、`admin_token`、`sess:*`（会话）、`login:rl:*`（登录限流）、`state`（lastCheckAt）、`migrated_v2`。
 
 ## 🔄 从 V1 迁移
 
@@ -93,7 +93,8 @@ Worker 首次收到请求时自动迁移（幂等，可重复跑）：
 | POST | /api/login /api/logout | 登录/退出（限流 5 次/15 分钟） |
 | GET/POST | /api/esims?q=&status=&tag= | 列表（搜索/筛选）/ 新建 |
 | GET/PUT/DELETE | /api/esims/:id | 详情（含续期历史）/ 更新 / 删除 |
-| POST | /api/esims/:id/renew | 续期 |
+| POST | /api/esims/:id/renew | 续期（支持 requestId 幂等） |
+| POST | /api/esims/:id/renew/preview | 续期预览（服务器计算新到期日） |
 | GET | /api/dashboard | 首页数据（统计/即将到期/标签） |
 | GET | /api/tags | 标签列表 |
 | GET | /api/notifications | 通知记录 |
@@ -105,7 +106,14 @@ Worker 首次收到请求时自动迁移（幂等，可重复跑）：
 
 ## ✅ 测试
 
-33 项服务端测试全过（`node:sqlite` 模拟 D1）：迁移映射、登录/限流/强制改密、CRUD、五种状态计算、搜索/筛选/标签、正常续期、**过期后续期（max+周期）**、续期历史、通知去重、通知失败落库、重发、设置落盘、密钥不泄露。
+`npm test` 运行 `tests/run.mjs`（`node:sqlite` 模拟 D1），41 项，覆盖：
+
+- 日期严格校验（闰年/非法日期如 2024-02-30、2025-13-01）
+- 续费：正常/已过期/无到期日/cycleDays=0 拒绝、重复 `requestId` 幂等、并发同 `requestId` 只生效一次
+- 配置：`reminderDays` 标准化（去重/排序/上限）、`timezone` 非法值 400
+- 通知渠道：HTTP 400/401/429/500 错误信息、错误 body 截断、10 秒超时
+- Cron：active/inactive/disabled/无到期日过滤、多阈值去重、失败重试、成功不重发、并发认领、KV 旧数据迁移
+- API：未知路由 404、未登录 401
 
 ## ⚠️ 已知问题
 
