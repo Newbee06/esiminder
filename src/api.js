@@ -37,11 +37,15 @@ function parseTags(input) {
   return out.slice(0, 20);
 }
 function sanitizeEsim(b, isCreate) {
+  const rawCycle = parseInt(b.cycleDays, 10);
+  if (b.cycleDays !== undefined && b.cycleDays !== '' && b.cycleDays !== null && (isNaN(rawCycle) || rawCycle < 0))
+    return { error: 'bad cycleDays' };
+  if (!isNaN(rawCycle) && rawCycle > 3650) return { error: 'bad cycleDays' };
   const o = {
     name: str(b.name, 60),
     country: str(b.country, 60), region: str(b.region, 60),
     carrier: str(b.carrier, 60), phone: str(b.phone, 40),
-    cycleDays: Math.max(0, parseInt(b.cycleDays, 10) || 0),
+    cycleDays: isNaN(rawCycle) ? 0 : Math.min(3650, Math.max(0, rawCycle)),
     activatedAt: str(b.activatedAt, 10), expiresAt: str(b.expiresAt, 10),
     provider: str(b.provider, 60), renewalUrl: str(b.renewalUrl, 500),
     status: ['active', 'inactive', 'disabled'].includes(b.status) ? b.status : 'active',
@@ -50,7 +54,7 @@ function sanitizeEsim(b, isCreate) {
   if (isCreate && !o.name) return { error: 'name required' };
   if (o.activatedAt && !validDateStr(o.activatedAt)) return { error: 'bad activatedAt' };
   if (o.expiresAt && !validDateStr(o.expiresAt)) return { error: 'bad expiresAt' };
-  if (o.renewalUrl && !/^https?:\/\//i.test(o.renewalUrl)) return { error: 'bad renewalUrl' };
+  if (o.renewalUrl && !/^https?:\/\/[^\s/$.?#].[^\s]*$/i.test(o.renewalUrl)) return { error: 'bad renewalUrl' };
   return { value: o };
 }
 async function clearDedup(env, esimId) {
@@ -176,27 +180,49 @@ export async function handleEsimDelete(req, env, params) {
   await clearDedup(env, params.id);
   return json({ ok: true });
 }
+// Server-authoritative renewal computation. The frontend may preview, but must
+// use the server's result. base = max(expiresAt, today) + cycleDays.
+function computeRenewal(row, today) {
+  if (!row.cycleDays || row.cycleDays <= 0) return { error: 'no cycle' };
+  const base = row.expiresAt && row.expiresAt >= today ? row.expiresAt : today;
+  const newExp = addDays(base, row.cycleDays);
+  if (!newExp) return { error: 'bad date' };
+  return {
+    currentExpiresAt: row.expiresAt || '',
+    cycleDays: row.cycleDays,
+    baseDate: base,
+    newExpiresAt: newExp,
+    fromToday: !(row.expiresAt && row.expiresAt >= today),
+  };
+}
+export async function handleEsimRenewPreview(req, env, params) {
+  const { err } = await needAuth(req, env);
+  if (err) return err;
+  const row = await getEsim(env.DB, params.id);
+  if (!row) return json({ ok: false, error: 'not found' }, 404);
+  const { today } = await ctx(env);
+  const c = computeRenewal(row, today);
+  if (c.error) return json({ ok: false, error: c.error }, 400);
+  return json({ ok: true, ...c });
+}
 export async function handleEsimRenew(req, env, params) {
   const { err } = await needAuth(req, env);
   if (err) return err;
   const row = await getEsim(env.DB, params.id);
   if (!row) return json({ ok: false, error: 'not found' }, 404);
-  if (!row.cycleDays || row.cycleDays <= 0) return json({ ok: false, error: 'no cycle' }, 400);
   const { today } = await ctx(env);
-  // expired (or missing) expiry -> count from today; otherwise extend from current expiry
-  const base = row.expiresAt && row.expiresAt >= today ? row.expiresAt : today;
-  const newExp = addDays(base, row.cycleDays);
-  if (!newExp) return json({ ok: false, error: 'bad date' }, 400);
+  const c = computeRenewal(row, today);
+  if (c.error) return json({ ok: false, error: c.error }, 400);
   const now = Date.now();
   await env.DB.prepare(
     `INSERT INTO renewal_records (id, esimId, renewedAt, days, oldExpiresAt, newExpiresAt)
      VALUES (?, ?, ?, ?, ?, ?)`
-  ).bind(crypto.randomUUID(), params.id, now, row.cycleDays, row.expiresAt || '', newExp).run();
+  ).bind(crypto.randomUUID(), params.id, now, row.cycleDays, row.expiresAt || '', c.newExpiresAt).run();
   await env.DB.prepare(
     'UPDATE esims SET expiresAt = ?, lastRenewedAt = ?, updatedAt = ? WHERE id = ?'
-  ).bind(newExp, now, now, params.id).run();
+  ).bind(c.newExpiresAt, now, now, params.id).run();
   await clearDedup(env, params.id);
-  return json({ ok: true, oldExpiresAt: row.expiresAt || '', newExpiresAt: newExp, fromToday: base === today && row.expiresAt !== today });
+  return json({ ok: true, oldExpiresAt: row.expiresAt || '', newExpiresAt: c.newExpiresAt, fromToday: c.fromToday });
 }
 
 // ---------------- dashboard / tags ----------------
@@ -296,8 +322,9 @@ export async function handleSettingsPut(req, env) {
   const { err, body } = await needAuth(req, env);
   if (err) return err;
   if (body.reminderDays !== undefined) {
-    parseThresholds(body.reminderDays);
-    await setSetting(env.DB, 'reminderDays', String(body.reminderDays));
+    const rd = String(body.reminderDays).slice(0, 100);
+    parseThresholds(rd);
+    await setSetting(env.DB, 'reminderDays', rd);
   }
   if (body.notifLang !== undefined) await setSetting(env.DB, 'notifLang', body.notifLang === 'en' ? 'en' : 'zh');
   if (body.theme !== undefined && ['system', 'light', 'dark'].includes(body.theme))
@@ -310,17 +337,34 @@ export async function handleChannelsPut(req, env) {
   const { err, body } = await needAuth(req, env);
   if (err) return err;
   const input = (body && body.channels) || {};
-  const s = v => String(v || '').trim();
-  const clean = {
-    telegram: { botToken: s(input.telegram && input.telegram.botToken), chatId: s(input.telegram && input.telegram.chatId) },
-    wecom: { webhook: s(input.wecom && input.wecom.webhook) },
-    dingtalk: { webhook: s(input.dingtalk && input.dingtalk.webhook), secret: s(input.dingtalk && input.dingtalk.secret) },
-    feishu: { webhook: s(input.feishu && input.feishu.webhook), secret: s(input.feishu && input.feishu.secret) },
-    bark: { key: s(input.bark && input.bark.key) },
-    serverchan: { sendKey: s(input.serverchan && input.serverchan.sendKey) },
-    email: { apiKey: s(input.email && input.email.apiKey), from: s(input.email && input.email.from), to: s(input.email && input.email.to) },
+  const existing = await getChannels(env);
+  // Merge, never blind-overwrite:
+  //   - missing/blank field  -> keep existing value
+  //   - non-blank value      -> update
+  //   - "<field>__clear":true -> delete the stored value
+  const FIELDS = {
+    telegram: ['botToken', 'chatId'],
+    wecom: ['webhook'],
+    dingtalk: ['webhook', 'secret'],
+    feishu: ['webhook', 'secret'],
+    bark: ['key'],
+    serverchan: ['sendKey'],
+    email: ['apiKey', 'from', 'to'],
   };
-  await env.CFG.put('channels', JSON.stringify(clean));
+  const merged = {};
+  for (const ch of Object.keys(FIELDS)) {
+    merged[ch] = { ...(existing[ch] || {}) };
+    const inc = input[ch] || {};
+    for (const f of FIELDS[ch]) {
+      if (inc[f + '__clear']) {
+        delete merged[ch][f];
+      } else if (inc[f] !== undefined && inc[f] !== null && String(inc[f]).trim() !== '') {
+        merged[ch][f] = String(inc[f]).trim().slice(0, 500);
+      }
+      // blank/missing: keep existing
+    }
+  }
+  await env.CFG.put('channels', JSON.stringify(merged));
   return json({ ok: true });
 }
 export async function handleMigrate(req, env) {
