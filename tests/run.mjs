@@ -421,22 +421,37 @@ console.log('-- API 路由 --');
   ok('未登录 401', r401.status === 401);
 }
 
-// ================= 6. 部署配置 =================
+// ================= 6. 部署配置（防回归） =================
 {
   const fs = await import('node:fs');
   const toml = fs.readFileSync(new URL('../wrangler.toml', import.meta.url), 'utf8');
-  ok('wrangler: 有 KV CFG binding', /\[\[kv_namespaces\]\][\s\S]*?binding\s*=\s*"CFG"/.test(toml));
-  ok('wrangler: 有 D1 DB binding', /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"DB"/.test(toml));
-  ok('wrangler: D1 有 database_name', /database_name\s*=\s*"esiminder-db"/.test(toml));
-  ok('wrangler: Cron 保留 (0 1 * * *)', /crons\s*=\s*\["0 1 \* \* \*"\]/.test(toml));
-  ok('wrangler: entrypoint 是 src/index.js', /main\s*=\s*"src\/index\.js"/.test(toml));
-  const devVars = fs.readFileSync(new URL('../.dev.vars.example', import.meta.url), 'utf8');
-  ok('.dev.vars.example: 声明 ADMIN_TOKEN', /^ADMIN_TOKEN=/m.test(devVars));
-  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-  ok('package.json: 有 cloudflare.bindings 说明', !!(pkg.cloudflare && pkg.cloudflare.bindings && pkg.cloudflare.bindings.DB && pkg.cloudflare.bindings.CFG));
   const readme = fs.readFileSync(new URL('../README.md', import.meta.url), 'utf8');
-  ok('README: 有真实 Deploy Button 链接', readme.includes('https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder'));
-  ok('README: 无作者资源 ID 硬编码要求', !readme.includes('6d5dd1455ef3446db547ee5f88aba953'));
+  const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  const devVars = fs.readFileSync(new URL('../.dev.vars.example', import.meta.url), 'utf8');
+  const KV_ID = '6d5dd1455ef3446db547ee5f88aba953';
+  const D1_ID = 'e2f07e02-958b-4566-b62f-9a3c32058aef';
+
+  // 检查 1: KV binding 必须存在
+  ok('检查1 wrangler: KV binding=CFG 存在', /\[\[kv_namespaces\]\][\s\S]*?binding\s*=\s*"CFG"/.test(toml));
+  // 检查 2: KV 后面不能有作者固定 ID
+  ok('检查2 wrangler: 无作者 KV ID', !toml.includes(KV_ID));
+  // 检查 3: D1 binding + database_name 必须存在
+  ok('检查3 wrangler: D1 binding=DB 存在', /\[\[d1_databases\]\][\s\S]*?binding\s*=\s*"DB"/.test(toml));
+  ok('检查3 wrangler: D1 database_name 存在', /database_name\s*=\s*"esiminder-db"/.test(toml));
+  // 检查 4: D1 不能有作者固定 ID
+  ok('检查4 wrangler: 无作者 D1 ID', !toml.includes(D1_ID));
+  // 检查 5: README 和配置文件中都不能出现作者 ID
+  ok('检查5 README: 无作者 KV/D1 ID', !readme.includes(KV_ID) && !readme.includes(D1_ID));
+  ok('检查5 package.json: 无作者 KV/D1 ID', !JSON.stringify(pkg).includes(KV_ID) && !JSON.stringify(pkg).includes(D1_ID));
+  ok('检查5 .dev.vars.example: 无作者 KV/D1 ID', !devVars.includes(KV_ID) && !devVars.includes(D1_ID));
+  // 检查 6: Deploy Button 必须存在
+  ok('检查6 README: Deploy Button 存在', readme.includes('https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder'));
+  // 检查 7: Cron 必须是 0 1 * * *
+  ok('检查7 wrangler: Cron 保留 (0 1 * * *)', /crons\s*=\s*\["0 1 \* \* \*"\]/.test(toml));
+  // 附加: entrypoint 与 ADMIN_TOKEN 声明
+  ok('wrangler: entrypoint 是 src/index.js', /main\s*=\s*"src\/index\.js"/.test(toml));
+  ok('.dev.vars.example: 声明 ADMIN_TOKEN', /^ADMIN_TOKEN=/m.test(devVars));
+  ok('package.json: 有 cloudflare.bindings 说明', !!(pkg.cloudflare && pkg.cloudflare.bindings && pkg.cloudflare.bindings.DB && pkg.cloudflare.bindings.CFG));
 }
 
 // ================= 汇总 =================
