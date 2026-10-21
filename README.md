@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>个人 eSIM 生命周期管理工具</strong><br>
-  集中管理 eSIM · 到期自动提醒 · 一键续期 · 多渠道通知
+  集中管理 · 到期提醒 · 一键续期 · 多渠道通知
 </p>
 
 <p align="center">
@@ -21,29 +21,29 @@
 
 ---
 
-> 不再因为忘记续费，让一张 eSIM 在旅行途中突然失效。
+> 落地才发现 eSIM 昨天就过期了？eSIMinder 提前提醒你续费，让每张卡都不断线。
 
 ## ✨ 核心功能
 
 ### 📱 eSIM 管理
 
-统一管理名称、国家/地区、运营商、手机号、激活日期、到期日期、续费周期和续费链接。支持标签、搜索、状态筛选，状态由系统自动计算。
+在一处管好每张卡：名称、国家/地区、运营商、手机号、激活日期、到期日期、续费周期、续费链接。标签、搜索、状态筛选一应俱全；使用中 / 即将到期 / 已过期 / 未激活等状态由系统按日期自动计算，无需手动维护。
 
 ### 🔔 到期提醒
 
-支持 7 / 3 / 1 / 0 天提醒，可自定义提醒周期。7 个通知渠道：Telegram、微信（企业微信）、钉钉、飞书、Bark、Server酱、邮件（Resend）。
+到期前 7 / 3 / 1 / 0 天分级提醒，提醒天数可自定义。一次配置，多渠道同时触达，共 7 个渠道：Telegram、企业微信、钉钉、飞书、Bark、Server酱、邮件（Resend）。
 
 ### 🔄 一键续期
 
-自动计算新的到期日期，支持过期卡续期、续期预览、续期历史和 `requestId` 幂等。
+点一下，自动按续费周期算出新的到期日期。过期卡也能续；续期前可预览、续期后有记录；`requestId` 幂等保证重复点击不会重复续费。
 
 ### ☁️ Cloudflare 部署
 
-基于 Cloudflare Workers + D1 + KV，无需自建服务器，可部署到用户自己的 Cloudflare 账户。
+Workers + D1 + KV 全托管架构，零服务器、零运维。点一下部署按钮就能装到你自己的 Cloudflare 账户，数据完全在你自己手里。
 
 > **设计定位**
 >
-> eSIMinder 专注个人 eSIM 生命周期管理，不包含用户注册、多用户、支付及财务管理等复杂业务。
+> 只做一件事：管好你个人的 eSIM。不做用户注册、多用户、支付和财务功能 — 简单、够用、不打扰。
 
 ## 🖥️ 界面预览
 
@@ -79,14 +79,14 @@
 
 ## 👤 适合谁
 
-- 经常使用海外 eSIM 的旅行者
-- 同时管理多张 eSIM 的用户
-- 需要长期记录套餐到期时间的用户
-- 不想因为忘记续费导致 eSIM 失效的用户
+- 经常出国、手机里躺着好几张旅行 eSIM 的人
+- 长期持有海外保号卡的人
+- 记不住每张卡哪天到期的人
+- 受够了「落地没网」的人
 
 ## 🎨 界面
 
-iOS 风格设计，浅色 / 深色 / 跟随系统；手机底部 Tab Bar，电脑左侧 Sidebar；中英双语。
+iOS 液态玻璃设计，通透而克制；浅色 / 深色 / 跟随系统，右上角一键切换。手机是底部 Tab 栏，电脑是左侧边栏；中文 / English 双语界面。
 
 ## 🚀 部署
 
@@ -94,12 +94,12 @@ iOS 风格设计，浅色 / 深色 / 跟随系统；手机底部 Tab Bar，电�
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder)
 
-1. 点击 **Deploy to Cloudflare**，登录并选择自己的 Cloudflare Account
-2. 设置 `ADMIN_TOKEN`（后台登录密码）
-3. Cloudflare 自动为该部署创建 D1 / KV，完成 Worker 部署
-4. 打开 Worker URL，用 `ADMIN_TOKEN` 登录，首次登录后修改密码
+1. 点击 **Deploy to Cloudflare**，登录并选择你自己的 Cloudflare 账户
+2. 按提示设置 `ADMIN_TOKEN`（就是你的后台登录密码）
+3. Cloudflare 自动新建 D1 / KV 并完成部署，无需手动建库
+4. 打开生成的 Worker 地址，用 `ADMIN_TOKEN` 登录；首次登录后请在设置里改掉密码
 
-> 每次部署使用部署者自己账号中的 D1 / KV，不使用仓库作者的资源。`ADMIN_TOKEN` 不提交到 GitHub。
+> 每次部署用的都是部署者自己账户里的 D1 / KV，与仓库作者的资源完全隔离。`ADMIN_TOKEN` 只保存在 Cloudflare 的密钥存储中，不会进入 GitHub。
 
 ### B. 手动部署
 
@@ -111,26 +111,26 @@ npx wrangler secret put ADMIN_TOKEN
 npx wrangler deploy
 ```
 
-> 如 CLI 返回资源 ID，只写入本地 `wrangler.toml`，不要提交到公开仓库。
+> 如果 CLI 返回了资源 ID，只写入你本地的 `wrangler.toml`，不要提交到公开仓库。
 
 ## 🆕 V2.1 更新
 
 | 功能 | 说明 |
 |---|---|
 | 续费幂等 | `requestId` 防止重复续费 |
-| 原子续期 | D1 单事务，要么全部成功要么全部回滚 |
-| 通知去重 | 去重状态进 D1，失败自动重试 |
-| 日期校验 | 拒绝非法日期 |
-| 配置校验 | 提醒天数标准化、时区服务端校验 |
-| 通知超时 | 全部渠道 10 秒超时 |
+| 原子续期 | D1 单事务，要么全部成功，要么全部回滚 |
+| 通知去重 | 去重状态存入 D1，发送失败自动重试 |
+| 日期校验 | 拒绝非法日期，避免脏数据 |
+| 配置校验 | 提醒天数自动标准化、时区由服务端校验 |
+| 通知超时 | 全部渠道统一 10 秒超时 |
 
 ## 🏗️ 技术架构
 
 Cloudflare Workers + D1 + KV，无其他依赖。
 
-- 数据库表首次请求自动创建，无需手动执行 SQL
-- V1 → V2、V2.0 → V2.1 迁移自动执行（幂等）
-- Cron `0 1 * * *`，每天北京时间 09:00 检查到期并推送提醒
+- 数据表在首次请求时自动创建，无需手动执行 SQL
+- 旧版本数据自动迁移（V1 → V2、V2.0 → V2.1），迁移幂等、可重复执行
+- Cron `0 1 * * *`：每天北京时间 09:00 检查到期并推送提醒
 
 ## 🗄️ 数据结构
 
@@ -169,13 +169,13 @@ KV
 npm test
 ```
 
-覆盖：Renewal Idempotency、Concurrent Renewal、Notification Deduplication、Notification Retry、Date Validation、Configuration Validation、Cron、Migration、Deployment Configuration。
+共 75 项，覆盖：续费幂等、并发续费、通知去重、通知重试、日期校验、配置校验、Cron、数据迁移、部署配置。
 
-## ⚠️ 已知问题
+## ⚠️ 注意事项
 
-- Cron 固定北京时间 09:00；时区设置只影响「今天」的日期边界计算
-- 邮件通道依赖 Resend，发件域名需在 Resend 验证
-- 通知历史不自动清理（个人用量可忽略）
+- 提醒检查固定在北京时间 09:00；时区设置仅影响「今天」的日期边界计算
+- 邮件渠道走 Resend，发件域名需先在 Resend 完成验证
+- 通知历史不自动清理，个人使用量下可以忽略
 
 ## 🤝 Author
 

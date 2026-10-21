@@ -21,29 +21,29 @@
 
 ---
 
-> Never let a forgotten renewal leave your eSIM unusable when you need it most.
+> Landed abroad only to find your eSIM expired yesterday? eSIMinder reminds you before that happens — every card stays connected.
 
 ## ✨ Core Features
 
 ### 📱 eSIM Management
 
-Manage name, country / region, carrier, phone number, activation date, expiry date, renewal cycle, and renewal links in one place. Tags, search, and status filters included; statuses are computed automatically.
+Keep every card in one place: name, country / region, carrier, phone number, activation date, expiry date, renewal cycle, and renewal link. Tags, search, and status filters included; statuses (active / expiring soon / expired / inactive) are computed automatically from dates — no manual upkeep.
 
 ### 🔔 Expiry Reminders
 
-Reminders at 7 / 3 / 1 / 0 days before expiry, customizable. 7 notification channels: Telegram, WeCom, DingTalk, Feishu, Bark, ServerChan, and Email (Resend).
+Staged reminders at 7 / 3 / 1 / 0 days before expiry, with customizable lead days. Configure once and get notified everywhere: 7 channels — Telegram, WeCom, DingTalk, Feishu, Bark, ServerChan, and Email (Resend).
 
 ### 🔄 One-Click Renewal
 
-New expiry dates computed automatically. Supports renewing expired cards, renewal preview, renewal history, and `requestId` idempotency.
+One click computes the new expiry date from the renewal cycle. Expired cards can be renewed too; preview before you confirm, history after you do, and `requestId` idempotency makes sure a double-tap never double-renews.
 
 ### ☁️ Cloudflare Deployment
 
-Built on Cloudflare Workers + D1 + KV. No servers to maintain — deploy to your own Cloudflare account.
+Fully hosted on Workers + D1 + KV — zero servers, zero maintenance. One click on the deploy button installs it into your own Cloudflare account; your data stays entirely yours.
 
 > **Design philosophy**
 >
-> eSIMinder focuses on personal eSIM lifecycle management. No sign-up, no multi-user, no payments, no finance features.
+> One job, done well: managing your personal eSIMs. No sign-up, no multi-user, no payments, no finance features — simple, sufficient, quiet.
 
 ## 🖥️ Screenshots
 
@@ -79,14 +79,14 @@ Built on Cloudflare Workers + D1 + KV. No servers to maintain — deploy to your
 
 ## 👤 Who It's For
 
-- Travelers who regularly use overseas eSIMs
-- Users managing multiple eSIMs at once
-- Anyone who needs to track plan expiry dates long-term
-- Anyone who doesn't want an eSIM to die from a forgotten renewal
+- Frequent travelers with a pocketful of travel eSIMs
+- Anyone keeping long-term overseas numbers alive
+- Anyone who can't remember when each card expires
+- Anyone tired of landing with no signal
 
 ## 🎨 Interface
 
-iOS-style design with Light / Dark / System themes; bottom Tab Bar on mobile, left Sidebar on desktop; Chinese / English bilingual.
+An iOS Liquid Glass design — translucent and restrained. Light / Dark / System themes, switched from the top-right corner. Bottom Tab Bar on mobile, left Sidebar on desktop; Chinese / English bilingual UI.
 
 ## 🚀 Deployment
 
@@ -95,11 +95,11 @@ iOS-style design with Light / Dark / System themes; bottom Tab Bar on mobile, le
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Newbee06/esiminder)
 
 1. Click **Deploy to Cloudflare**, log in and pick your own Cloudflare Account
-2. Set `ADMIN_TOKEN` (your admin password)
-3. Cloudflare provisions a fresh D1 / KV for this deployment and deploys the Worker
-4. Open your Worker URL, log in with `ADMIN_TOKEN`, and change your password after first login
+2. Set `ADMIN_TOKEN` when prompted (this becomes your admin password)
+3. Cloudflare provisions a fresh D1 / KV and deploys the Worker — no manual database setup
+4. Open your Worker URL, log in with `ADMIN_TOKEN`, and change your password in Settings after first login
 
-> Every deployment uses D1 / KV in the deployer's own account — never the repo author's resources. `ADMIN_TOKEN` is never committed to GitHub.
+> Every deployment uses D1 / KV in the deployer's own account — fully isolated from the repo author's resources. `ADMIN_TOKEN` lives only in Cloudflare's secret storage; it never enters GitHub.
 
 ### B. Manual deployment
 
@@ -119,17 +119,17 @@ npx wrangler deploy
 |---|---|
 | Renewal Idempotency | `requestId` prevents duplicate renewals |
 | Atomic Renewal | Single D1 transaction — all or nothing |
-| Notification Dedup | Dedup state moved into D1, automatic retry on failure |
-| Date Validation | Rejects invalid dates |
+| Notification Dedup | Dedup state stored in D1, automatic retry on failure |
+| Date Validation | Invalid dates are rejected, keeping data clean |
 | Config Validation | Reminder days normalized, timezone validated server-side |
-| Notification Timeout | 10-second timeout on all channels |
+| Notification Timeout | Uniform 10-second timeout on all channels |
 
 ## 🏗️ Architecture
 
 Cloudflare Workers + D1 + KV. No other dependencies.
 
 - Tables are created automatically on first request — no manual SQL
-- V1 → V2 and V2.0 → V2.1 migrations run automatically (idempotent)
+- Older data migrates automatically (V1 → V2, V2.0 → V2.1); migrations are idempotent and safe to re-run
 - Cron `0 1 * * *` checks expiries and sends reminders daily at 09:00 Beijing time
 
 ## 🗄️ Data Model
@@ -169,12 +169,12 @@ KV
 npm test
 ```
 
-Covers: Renewal Idempotency, Concurrent Renewal, Notification Deduplication, Notification Retry, Date Validation, Configuration Validation, Cron, Migration, Deployment Configuration.
+75 tests covering: renewal idempotency, concurrent renewal, notification deduplication, notification retry, date validation, configuration validation, Cron, migration, and deployment configuration.
 
 ## ⚠️ Known Notes
 
-- Cron is fixed at 09:00 Beijing time; the timezone setting only affects the "today" date boundary
-- Email channel requires a verified sending domain in Resend
+- Reminder checks run at 09:00 Beijing time; the timezone setting only affects the "today" date boundary
+- The email channel runs on Resend; the sending domain must be verified there first
 - Notification history is not auto-pruned (negligible for personal use)
 
 ## 🤝 Author
