@@ -47,7 +47,7 @@ Workers + D1 + KV 全托管架构，零服务器、零运维。点一下部署�
 
 ## 🖥️ 界面预览
 
-### Dashboard
+### 仪表板
 
 <p align="center">
   <img src="./docs/screenshots/dashboard.png" alt="eSIMinder Dashboard" width="900">
