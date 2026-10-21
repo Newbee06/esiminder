@@ -363,11 +363,11 @@ async function doMustChange(){
 }
 /* ---------- dashboard ---------- */
 async function renderDashboard(){
-  setView(layout('<div class="pagetitle">' + greeting() + '</div><div class="pagesub">' + t('appSub') + '</div>' + skeleton(4), 'home'));
+  setView(layout('<div class="pagetitle">' + greeting() + '</div><div class="pagesub">' + t('greetSub') + '</div>' + skeleton(4), 'home'));
   var d = await api('GET', '/api/dashboard');
   if (!d.ok) return;
   S.dash = d;
-  var h = '<div class="pagetitle">' + greeting() + '</div><div class="pagesub">' + t('myEsims') + '</div>';
+  var h = '<div class="pagetitle">' + greeting() + '</div><div class="pagesub">' + t('greetSub') + '</div>';
   var st = d.stats;
   h += '<div class="statgrid">'
     + statCard(st.all, 'statAll', '')
