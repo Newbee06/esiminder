@@ -38,6 +38,8 @@ const FAVICON_LINKS = '<link rel="icon" type="image/svg+xml" media="(prefers-col
 + '<link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: dark)" href="/icon-dark.svg">'
 + '<link rel="icon" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" href="/icon-light-32.png">'
 + '<link rel="icon" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" href="/icon-dark-32.png">'
++ '<link rel="icon" type="image/png" sizes="192x192" media="(prefers-color-scheme: light)" href="/icon-light-192.png">'
++ '<link rel="icon" type="image/png" sizes="192x192" media="(prefers-color-scheme: dark)" href="/icon-dark-192.png">'
 + '<link rel="apple-touch-icon" href="/apple-touch-icon.png">';
 export const LOGIN_PAGE = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
 + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'

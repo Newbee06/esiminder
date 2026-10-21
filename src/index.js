@@ -68,6 +68,8 @@ export default {
     if (path === '/icon-dark.svg' || path === '/favicon-dark.svg') return iconResp(FAVICON_SVG_DARK, 'image/svg+xml');
     if (path === '/icon-light-32.png' || path === '/favicon-light-32.png') return pngResp(FAVICON_PNG.light32);
     if (path === '/icon-dark-32.png' || path === '/favicon-dark-32.png') return pngResp(FAVICON_PNG.dark32);
+    if (path === '/icon-light-192.png') return pngResp(FAVICON_PNG.light192);
+    if (path === '/icon-dark-192.png') return pngResp(FAVICON_PNG.dark192);
     if (path === '/favicon.ico') return pngResp(FAVICON_PNG.tileIco32);
     if (path === '/apple-touch-icon.png') return pngResp(FAVICON_PNG.tileApple180);
     if (path === '/' || path === '/index.html') {
