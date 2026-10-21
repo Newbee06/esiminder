@@ -6,6 +6,7 @@ import { runScheduled } from './cron.js';
 import { json } from './api.js';
 import * as api from './api.js';
 import { LOGIN_PAGE, appShell } from './ui/shell.js';
+import { FAVICON_SVG_LIGHT, FAVICON_SVG_DARK, FAVICON_PNG } from './favicon.js';
 import { getSettings } from './db.js';
 
 const ROUTES = [
@@ -50,10 +51,25 @@ function html(s) {
 // paths allowed while password change is forced
 const MUST_CHANGE_ALLOW = new Set(['/api/admin-password', '/api/logout']);
 
+function iconResp(body, type) {
+  return new Response(body, { headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=604800' } });
+}
+function pngResp(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Response(bytes, { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=604800' } });
+}
 export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname;
+    if (path === '/favicon-light.svg') return iconResp(FAVICON_SVG_LIGHT, 'image/svg+xml');
+    if (path === '/favicon-dark.svg') return iconResp(FAVICON_SVG_DARK, 'image/svg+xml');
+    if (path === '/favicon-light-32.png') return pngResp(FAVICON_PNG.light32);
+    if (path === '/favicon-dark-32.png') return pngResp(FAVICON_PNG.dark32);
+    if (path === '/favicon.ico') return pngResp(FAVICON_PNG.dark32);
+    if (path === '/apple-touch-icon.png') return pngResp(FAVICON_PNG.apple180);
     if (path === '/' || path === '/index.html') {
       const sess = await getSession(req, env);
       if (!sess) return html(LOGIN_PAGE);

@@ -34,10 +34,15 @@ const LOGIN_CSS = '*{box-sizing:border-box}'
 + 'input:focus{background:rgba(255,255,255,.13);border-color:#3aa9f5;box-shadow:inset 0 1px 3px rgba(0,0,0,.25),0 0 0 4px rgba(46,166,242,.22)}'
 + '}';
 
+const FAVICON_LINKS = '<link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: light)" href="/favicon-light.svg">'
++ '<link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: dark)" href="/favicon-dark.svg">'
++ '<link rel="icon" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" href="/favicon-light-32.png">'
++ '<link rel="icon" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" href="/favicon-dark-32.png">'
++ '<link rel="apple-touch-icon" href="/apple-touch-icon.png">';
 export const LOGIN_PAGE = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
 + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
 + '<meta name="color-scheme" content="light dark">'
-+ '<title>eSIMinder</title><style>' + LOGIN_CSS + '</style></head><body>'
++ '<title>eSIMinder</title>' + FAVICON_LINKS + '<style>' + LOGIN_CSS + '</style></head><body>'
 + '<div class="card"><div class="lang"><a onclick="toggleLang()" id="langLink">EN</a></div>'
 + '<div class="logo"><span class="logochip"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2ea6f2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.2 2.8h6.6l6.4 6.4v10.4a1.6 1.6 0 0 1-1.6 1.6H6.2a1.6 1.6 0 0 1-1.6-1.6V4.4a1.6 1.6 0 0 1 1.6-1.6Z"/><rect x="8.4" y="12" width="7" height="6.2" rx="1.2"/><path d="M8.4 15.1h7"/></svg></span></div><h1>eSIMinder</h1><div class="sub" id="loginSub"></div>'
 + '<div id="loginForm"><input id="pw" type="password" autocomplete="current-password">'
@@ -80,7 +85,7 @@ export function appShell(settings) {
   return '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
   + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
   + '<meta name="color-scheme" content="light dark">'
-  + '<title>eSIMinder</title>'
+  + '<title>eSIMinder</title>' + FAVICON_LINKS
   + '<script>window.__BOOT__=' + JSON.stringify({ theme: (settings && settings.theme) || 'system' }) + ';</script>'
   + '<script>window.__STR__=' + JSON.stringify(STR) + ';</script>'
   + '</head><body><div id="app"></div><div id="modal-root"></div><div id="toast-root"></div>'
