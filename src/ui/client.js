@@ -150,8 +150,8 @@ var CSS = ':root{--sat:env(safe-area-inset-top);--sab:env(safe-area-inset-bottom
 CSS += '.extlinks{display:flex;justify-content:center;gap:12px;}.extlinks a{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text2);background:var(--glass-grad);border:1px solid var(--glass-brd);box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--glass-fx);backdrop-filter:var(--glass-fx);text-decoration:none;}.extlinks a:active{transform:scale(.93);}.extlinks .blogico{width:20px;height:20px;display:block;}[data-theme="dark"] .extlinks .blogico{filter:invert(1);}';
 CSS += '.topbar{position:fixed;top:calc(10px + var(--sat));right:14px;display:flex;gap:8px;z-index:60;}.tb-btn{min-width:38px;height:38px;padding:0 11px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--text2);background:var(--glass-grad);border:1px solid var(--glass-brd);box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--glass-fx);backdrop-filter:var(--glass-fx);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}.tb-btn:active{transform:scale(.93);}.tb-btn svg{display:block;}';
 CSS += 'html[data-theme="light"] body{background-image:radial-gradient(620px 420px at 10% -6%,rgba(64,168,255,.55),rgba(64,168,255,0) 62%),radial-gradient(560px 420px at 98% 2%,rgba(120,205,255,.48),rgba(120,205,255,0) 60%),radial-gradient(760px 620px at 50% 112%,rgba(52,140,245,.38),rgba(52,140,245,0) 62%),radial-gradient(520px 420px at 88% 88%,rgba(64,230,190,.22),rgba(64,230,190,0) 60%),radial-gradient(480px 380px at 6% 78%,rgba(166,140,255,.22),rgba(166,140,255,0) 60%);}';
-CSS += '@media(max-width:899px){.pagetitle.pt-tab{display:none;}}';
-CSS += '@media(max-width:899px){.page.sub{padding-top:calc(60px + var(--sat));}}';
+CSS += '.pagetitle.pt-tab{display:none;}';
+CSS += '.page.sub{padding-top:calc(60px + var(--sat));}';
 CSS += '.sb-fv-dark{display:none;}[data-theme="dark"] .sb-fv-light{display:none;}[data-theme="dark"] .sb-fv-dark{display:block;}';
 try {
   var _styleEl = document.createElement('style');
