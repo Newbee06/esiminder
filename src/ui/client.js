@@ -149,6 +149,7 @@ var CSS = ':root{--sat:env(safe-area-inset-top);--sab:env(safe-area-inset-bottom
 /* inject styles: the shell carries no <style> tag, so the SPA must add its own */
 CSS += '.extlinks{display:flex;justify-content:center;gap:12px;}.extlinks a{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text2);background:var(--glass-grad);border:1px solid var(--glass-brd);box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--glass-fx);backdrop-filter:var(--glass-fx);text-decoration:none;}.extlinks a:active{transform:scale(.93);}.extlinks .blogico{width:20px;height:20px;display:block;}[data-theme="dark"] .extlinks .blogico{filter:invert(1);}';
 CSS += '.topbar{position:fixed;top:calc(10px + var(--sat));right:14px;display:flex;gap:8px;z-index:60;}.tb-btn{min-width:38px;height:38px;padding:0 11px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--text2);background:var(--glass-grad);border:1px solid var(--glass-brd);box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--glass-fx);backdrop-filter:var(--glass-fx);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}.tb-btn:active{transform:scale(.93);}.tb-btn svg{display:block;}';
+CSS += '@media(max-width:899px){.topbar.tb-sub{display:none;}}';
 CSS += '.sb-fv-dark{display:none;}[data-theme="dark"] .sb-fv-light{display:none;}[data-theme="dark"] .sb-fv-dark{display:block;}';
 try {
   var _styleEl = document.createElement('style');
@@ -282,7 +283,7 @@ function layout(content, active){
   }).join('');
   return '<div class="appwrap"><div class="sidebar"><div class="logo" style="display:flex;align-items:center;gap:9px;">' + SB_FAVICON + '<span>eSIMinder</span></div>' + side + '<div style="margin-top:auto;padding-top:16px;">' + EXT_LINKS + '</div></div>'
     + '<div class="page" style="flex:1">' + content + '</div></div>'
-    + '<div class="topbar"><button class="tb-btn" onclick="toggleLang()" aria-label="Language">' + (LANG === 'zh' ? 'EN' : '中文') + '</button>'
+    + '<div class="topbar' + (active === 'home' ? '' : ' tb-sub') + '"><button class="tb-btn" onclick="toggleLang()" aria-label="Language">' + (LANG === 'zh' ? 'EN' : '中文') + '</button>'
     + '<button class="tb-btn" onclick="toggleTheme()" aria-label="Theme">' + themeIconSvg() + '</button></div>'
     + '<div class="tabbar">' + tabs + '</div>';
 }
@@ -688,9 +689,22 @@ function applyLangAll(){ document.documentElement.lang = LANG === 'zh' ? 'zh-CN'
 var CH_CLEARED = {};
 var EL_TO_FIELD = {};
 for (var _ck in CH_MAP) { CH_MAP[_ck].forEach(function(p){ EL_TO_FIELD[p[1]] = p[0]; }); }
+var CH_PICK = '';
+function chPick(k){
+  CH_PICK = k;
+  Array.prototype.forEach.call(document.querySelectorAll('#chwrap .ch[data-ch]'), function(d){
+    d.style.display = d.getAttribute('data-ch') === k ? '' : 'none';
+  });
+}
 function paintChannels(chStatus){
   var el = document.getElementById('chwrap');
-  el.innerHTML = CH_DEFS.map(function(c){
+  var pick = CH_PICK;
+  if (!pick) { var fc = CH_DEFS.filter(function(c){ return chStatus[c.k]; })[0]; pick = fc ? fc.k : CH_DEFS[0].k; }
+  var sel = '<div class="card" style="margin-bottom:12px;"><label class="f">' + (LANG === 'zh' ? '选择通道' : 'Channel') + '</label>'
+    + '<select id="ch_pick" onchange="chPick(this.value)">'
+    + CH_DEFS.map(function(c){ return '<option value="' + c.k + '"' + (pick === c.k ? ' selected' : '') + '>' + t(CH_LABEL[c.k]) + (chStatus[c.k] ? ' ✓' : '') + '</option>'; }).join('')
+    + '</select></div>';
+  el.innerHTML = sel + CH_DEFS.map(function(c){
     var ok = chStatus[c.k];
     var fs = c.f.map(function(f){
       var elId = f[0], field = EL_TO_FIELD[elId] || elId;
@@ -702,7 +716,7 @@ function paintChannels(chStatus){
       if (cleared) h += '<div style="color:var(--red);font-size:12px;margin:2px 0 6px;">' + t('clear') + '</div>';
       return h;
     }).join('');
-    return '<div class="ch"><h4>' + c.ic + ' ' + t(CH_LABEL[c.k]) + (ok ? ' <span class="st">✓ ' + t('configured') + '</span>' : '') + '</h4>' + fs + '</div>';
+    return '<div class="ch" data-ch="' + c.k + '"' + (pick === c.k ? '' : ' style="display:none"') + '><h4>' + c.ic + ' ' + t(CH_LABEL[c.k]) + (ok ? ' <span class="st">✓ ' + t('configured') + '</span>' : '') + '</h4>' + fs + '</div>';
   }).join('');
   Array.prototype.forEach.call(el.querySelectorAll('a[data-clear]'), function(a){
     a.addEventListener('click', function(){
