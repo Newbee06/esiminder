@@ -64,12 +64,12 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const path = url.pathname;
-    if (path === '/favicon-light.svg') return iconResp(FAVICON_SVG_LIGHT, 'image/svg+xml');
-    if (path === '/favicon-dark.svg') return iconResp(FAVICON_SVG_DARK, 'image/svg+xml');
-    if (path === '/favicon-light-32.png') return pngResp(FAVICON_PNG.light32);
-    if (path === '/favicon-dark-32.png') return pngResp(FAVICON_PNG.dark32);
-    if (path === '/favicon.ico') return pngResp(FAVICON_PNG.dark32);
-    if (path === '/apple-touch-icon.png') return pngResp(FAVICON_PNG.apple180);
+    if (path === '/icon-light.svg' || path === '/favicon-light.svg') return iconResp(FAVICON_SVG_LIGHT, 'image/svg+xml');
+    if (path === '/icon-dark.svg' || path === '/favicon-dark.svg') return iconResp(FAVICON_SVG_DARK, 'image/svg+xml');
+    if (path === '/icon-light-32.png' || path === '/favicon-light-32.png') return pngResp(FAVICON_PNG.light32);
+    if (path === '/icon-dark-32.png' || path === '/favicon-dark-32.png') return pngResp(FAVICON_PNG.dark32);
+    if (path === '/favicon.ico') return pngResp(FAVICON_PNG.tileIco32);
+    if (path === '/apple-touch-icon.png') return pngResp(FAVICON_PNG.tileApple180);
     if (path === '/' || path === '/index.html') {
       const sess = await getSession(req, env);
       if (!sess) return html(LOGIN_PAGE);

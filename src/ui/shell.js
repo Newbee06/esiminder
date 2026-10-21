@@ -34,11 +34,11 @@ const LOGIN_CSS = '*{box-sizing:border-box}'
 + 'input:focus{background:rgba(255,255,255,.13);border-color:#3aa9f5;box-shadow:inset 0 1px 3px rgba(0,0,0,.25),0 0 0 4px rgba(46,166,242,.22)}'
 + '}';
 
-const FAVICON_LINKS = '<link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: light)" href="/favicon-light.svg?v=5">'
-+ '<link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: dark)" href="/favicon-dark.svg?v=5">'
-+ '<link rel="icon" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" href="/favicon-light-32.png?v=5">'
-+ '<link rel="icon" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" href="/favicon-dark-32.png?v=5">'
-+ '<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=5">';
+const FAVICON_LINKS = '<link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: light)" href="/icon-light.svg">'
++ '<link rel="icon" type="image/svg+xml" media="(prefers-color-scheme: dark)" href="/icon-dark.svg">'
++ '<link rel="icon" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" href="/icon-light-32.png">'
++ '<link rel="icon" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" href="/icon-dark-32.png">'
++ '<link rel="apple-touch-icon" href="/apple-touch-icon.png">';
 export const LOGIN_PAGE = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
 + '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
 + '<meta name="color-scheme" content="light dark">'
