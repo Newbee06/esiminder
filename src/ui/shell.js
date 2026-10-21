@@ -36,7 +36,7 @@ export const LOGIN_PAGE = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset
 + '<meta name="color-scheme" content="light dark">'
 + '<title>eSIMinder</title><style>' + LOGIN_CSS + '</style></head><body>'
 + '<div class="card"><div class="lang"><a onclick="toggleLang()" id="langLink">EN</a></div>'
-+ '<div class="logo"><span class="logochip"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2ea6f2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 5h3"/><path d="M11 18.6h2"/></svg></span></div><h1>eSIMinder</h1><div class="sub" id="loginSub"></div>'
++ '<div class="logo"><span class="logochip"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2ea6f2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.2 2.8h6.6l6.4 6.4v10.4a1.6 1.6 0 0 1-1.6 1.6H6.2a1.6 1.6 0 0 1-1.6-1.6V4.4a1.6 1.6 0 0 1 1.6-1.6Z"/><rect x="8.4" y="12" width="7" height="6.2" rx="1.2"/><path d="M8.4 15.1h7"/></svg></span></div><h1>eSIMinder</h1><div class="sub" id="loginSub"></div>'
 + '<div id="loginForm"><input id="pw" type="password" autocomplete="current-password">'
 + '<button onclick="doLogin()" id="loginBtn"></button></div>'
 + '<div id="pwForm" style="display:none"><div class="sub" id="mustChange" style="color:#ff9500"></div>'

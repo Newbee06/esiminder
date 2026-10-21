@@ -153,7 +153,7 @@ try {
 /* ---------- SVG line icons (global light blue via --icon) ---------- */
 var ICON_PATHS = {
   home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/>',
-  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 5h3"/><path d="M11 18.6h2"/>',
+  esim: '<path d="M6.2 2.8h6.6l6.4 6.4v10.4a1.6 1.6 0 0 1-1.6 1.6H6.2a1.6 1.6 0 0 1-1.6-1.6V4.4a1.6 1.6 0 0 1 1.6-1.6Z"/><rect x="8.4" y="12" width="7" height="6.2" rx="1.2"/><path d="M8.4 15.1h7"/>',
   bell: '<path d="M6 9.5a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6"/><path d="M10 19a2 2 0 0 0 4 0"/>',
   belloff: '<path d="M6 9.5a6 6 0 0 1 11.4-3.4M18.6 15.6c.7.5 1.4.9 1.4.9H4s2-1 2-6c0-1.2.3-2.4.9-3.4"/><path d="M10 19a2 2 0 0 0 4 0"/><path d="m4 4 16 16"/>',
   sliders: '<path d="M4 7h8.5M19 7h1M4 17h2.5M13 17h7"/><circle cx="15.8" cy="7" r="2.3"/><circle cx="9.3" cy="17" r="2.3"/>',
@@ -238,7 +238,7 @@ function flagFor(country, sz, extra){
     for (var k2 in FLAGS) { if (x.indexOf(k2) >= 0) return FLAGS[k2]; }
     for (var k3 in CARRIER_FLAGS) { if (x.indexOf(k3) >= 0) return CARRIER_FLAGS[k3]; }
   }
-  if (!c && !x) return icon('phone', sz || 36);
+  if (!c && !x) return icon('esim', sz || 36);
   return icon('globe', sz || 36);
 }
 /* ---------- router ---------- */
@@ -259,7 +259,7 @@ window.addEventListener('hashchange', render);
 /* ---------- layout ---------- */
 var NAVS = [
   { k: 'home', ic: icon('home'), label: 'navHome', hash: '#/' },
-  { k: 'esims', ic: icon('phone'), label: 'navEsims', hash: '#/esims' },
+  { k: 'esims', ic: icon('esim'), label: 'navEsims', hash: '#/esims' },
   { k: 'notifs', ic: icon('bell'), label: 'navNotifs', hash: '#/notifications' },
   { k: 'settings', ic: icon('sliders'), label: 'navSettings', hash: '#/settings' }
 ];
@@ -270,7 +270,7 @@ function layout(content, active){
   var side = NAVS.map(function(n){
     return '<a href="' + n.hash + '" class="' + (active === n.k ? 'on' : '') + '"><span class="ic">' + n.ic + '</span><span>' + t(n.label) + '</span></a>';
   }).join('');
-  return '<div class="appwrap"><div class="sidebar"><div class="logo" style="display:flex;align-items:center;gap:9px;">' + icon('phone', 25) + '<span>eSIMinder</span></div>' + side + '</div>'
+  return '<div class="appwrap"><div class="sidebar"><div class="logo" style="display:flex;align-items:center;gap:9px;">' + icon('esim', 25) + '<span>eSIMinder</span></div>' + side + '</div>'
     + '<div class="page" style="flex:1">' + content + '</div></div>'
     + '<div class="tabbar">' + tabs + '</div>';
 }
@@ -367,7 +367,7 @@ async function renderDashboard(){
     h += '<div class="card" style="text-align:center;color:var(--text2);font-size:14px;">' + t('emptyExpiring') + '</div>';
   }
   h += '<div class="sech"><h2>' + t('secAllEsims') + '</h2><a href="#/esims">' + t('viewAll') + ' →</a></div>';
-  h += d.esims.length ? d.esims.slice(0, 6).map(esimCard).join('') : emptyState(icon('phone', 46), t('emptyEsims'));
+  h += d.esims.length ? d.esims.slice(0, 6).map(esimCard).join('') : emptyState(icon('esim', 46), t('emptyEsims'));
   h += '<button class="fab" onclick="nav(\\'#/esim/new\\')">' + icon('plus', 26) + '</button>';
   setView(layout(h, 'home'));
 }
