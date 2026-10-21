@@ -149,7 +149,7 @@ var CSS = ':root{--sat:env(safe-area-inset-top);--sab:env(safe-area-inset-bottom
 /* inject styles: the shell carries no <style> tag, so the SPA must add its own */
 CSS += '.extlinks{display:flex;justify-content:center;gap:12px;}.extlinks a{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text2);background:var(--glass-grad);border:1px solid var(--glass-brd);box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--glass-fx);backdrop-filter:var(--glass-fx);text-decoration:none;}.extlinks a:active{transform:scale(.93);}.extlinks .blogico{width:20px;height:20px;display:block;}[data-theme="dark"] .extlinks .blogico{filter:invert(1);}';
 CSS += '.topbar{position:fixed;top:calc(10px + var(--sat));right:14px;display:flex;gap:8px;z-index:60;}.tb-btn{min-width:38px;height:38px;padding:0 11px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--text2);background:var(--glass-grad);border:1px solid var(--glass-brd);box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--glass-fx);backdrop-filter:var(--glass-fx);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}.tb-btn:active{transform:scale(.93);}.tb-btn svg{display:block;}';
-CSS += '@media(max-width:899px){.topbar.tb-sub{display:none;}}';
+CSS += '@media(max-width:899px){.pagetitle.pt-tab{display:none;}}';
 CSS += '.sb-fv-dark{display:none;}[data-theme="dark"] .sb-fv-light{display:none;}[data-theme="dark"] .sb-fv-dark{display:block;}';
 try {
   var _styleEl = document.createElement('style');
@@ -283,7 +283,7 @@ function layout(content, active){
   }).join('');
   return '<div class="appwrap"><div class="sidebar"><div class="logo" style="display:flex;align-items:center;gap:9px;">' + SB_FAVICON + '<span>eSIMinder</span></div>' + side + '<div style="margin-top:auto;padding-top:16px;">' + EXT_LINKS + '</div></div>'
     + '<div class="page" style="flex:1">' + content + '</div></div>'
-    + '<div class="topbar' + (active === 'home' ? '' : ' tb-sub') + '"><button class="tb-btn" onclick="toggleLang()" aria-label="Language">' + (LANG === 'zh' ? 'EN' : '中文') + '</button>'
+    + '<div class="topbar"><button class="tb-btn" onclick="toggleLang()" aria-label="Language">' + (LANG === 'zh' ? 'EN' : '中文') + '</button>'
     + '<button class="tb-btn" onclick="toggleTheme()" aria-label="Theme">' + themeIconSvg() + '</button></div>'
     + '<div class="tabbar">' + tabs + '</div>';
 }
@@ -395,7 +395,7 @@ var LIST_FILTERS = [
 ];
 async function renderEsimList(){
   var q0 = parseHash().query;
-  setView(layout('<div class="pagetitle">' + t('navEsims') + '</div>' + skeleton(4), 'esims'));
+  setView(layout('<div class="pagetitle pt-tab">' + t('navEsims') + '</div>' + skeleton(4), 'esims'));
   var d = await api('GET', '/api/esims');
   if (!d.ok) return;
   var tags = await api('GET', '/api/tags');
@@ -404,7 +404,7 @@ async function renderEsimList(){
 }
 function paintEsimList(items, q0){
   var q = q0.q || '', status = q0.status || '', tag = q0.tag || '';
-  var h = '<div class="pagetitle">' + t('navEsims') + '</div>';
+  var h = '<div class="pagetitle pt-tab">' + t('navEsims') + '</div>';
   h += '<div class="searchbar"><span class="sic">' + icon('search', 19) + '</span><input type="text" id="q" placeholder="' + t('searchPh') + '" value="' + esc(q) + '"></div>';
   h += '<div class="chips">' + LIST_FILTERS.map(function(f){
     return '<button class="chip ' + (status === f.k ? 'on' : '') + '" data-f="' + f.k + '">' + t(f.label) + '</button>';
@@ -592,10 +592,10 @@ var CH_DEFS = [
 var CH_MAP = { telegram: [['botToken', 'tg_token'], ['chatId', 'tg_chat']], wecom: [['webhook', 'wc_hook']], dingtalk: [['webhook', 'dd_hook'], ['secret', 'dd_secret']], feishu: [['webhook', 'fs_hook'], ['secret', 'fs_secret']], bark: [['key', 'bark_key']], serverchan: [['sendKey', 'sc_key']], email: [['apiKey', 'em_key'], ['from', 'em_from'], ['to', 'em_to']] };
 var CH_LABEL = { telegram: 'ch_telegram', wecom: 'ch_wecom', dingtalk: 'ch_dingtalk', feishu: 'ch_feishu', bark: 'ch_bark', serverchan: 'ch_serverchan', email: 'ch_email' };
 async function renderNotifications(){
-  setView(layout('<div class="pagetitle">' + t('notifTitle') + '</div>' + skeleton(4), 'notifs'));
+  setView(layout('<div class="pagetitle pt-tab">' + t('notifTitle') + '</div>' + skeleton(4), 'notifs'));
   var d = await api('GET', '/api/notifications?limit=100');
   if (!d.ok) return;
-  var h = '<div class="pagetitle">' + t('notifTitle') + '</div>';
+  var h = '<div class="pagetitle pt-tab">' + t('notifTitle') + '</div>';
   h += '<div class="card"><div style="display:flex;gap:8px;align-items:center;">'
     + '<select id="test_ch" style="margin:0;flex:1"></select>'
     + '<button class="btn sm" style="white-space:nowrap" onclick="doTest()">' + t('sendTest') + '</button></div></div>';
@@ -648,12 +648,12 @@ async function doRetry(id){
 /* ---------- settings ---------- */
 var TIMEZONES = ['Asia/Shanghai', 'Asia/Hong_Kong', 'Asia/Taipei', 'Asia/Tokyo', 'Asia/Seoul', 'Asia/Singapore', 'Asia/Bangkok', 'Asia/Dubai', 'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'Australia/Sydney', 'Pacific/Auckland', 'UTC'];
 async function renderSettings(){
-  setView(layout('<div class="pagetitle">' + t('navSettings') + '</div>' + skeleton(3), 'settings'));
+  setView(layout('<div class="pagetitle pt-tab">' + t('navSettings') + '</div>' + skeleton(3), 'settings'));
   var d = await api('GET', '/api/settings');
   if (!d.ok) return;
   S.settings = d.settings;
   var st = d.settings;
-  var h = '<div class="pagetitle">' + t('navSettings') + '</div>';
+  var h = '<div class="pagetitle pt-tab">' + t('navSettings') + '</div>';
   h += '<div class="fsec">' + t('setReminders') + '</div><div class="card">'
     + '<label class="f">' + t('setRemindDays') + '</label><input type="text" id="s_days" value="' + esc(st.reminderDays) + '">'
     + '<div class="lbl" style="margin-bottom:10px;">' + t('remindDaysHint') + '</div>'
