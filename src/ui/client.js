@@ -219,6 +219,14 @@ function greeting(){
   if (h < 18) return t('greetAfternoon');
   return t('greetEvening');
 }
+function greetSub(){
+  var h = new Date().getHours();
+  if (h < 5) return t('subNight');
+  if (h < 11) return t('subMorning');
+  if (h < 14) return t('subNoon');
+  if (h < 18) return t('subAfternoon');
+  return t('subEvening');
+}
 /* ---------- country flags ---------- */
 var FLAGS = {
   '美国': '🇺🇸', '美利坚': '🇺🇸', 'usa': '🇺🇸', 'united states': '🇺🇸', 'america': '🇺🇸',
@@ -363,11 +371,11 @@ async function doMustChange(){
 }
 /* ---------- dashboard ---------- */
 async function renderDashboard(){
-  setView(layout('<div class="pagetitle">' + greeting() + '</div><div class="pagesub">' + t('greetSub') + '</div>' + skeleton(4), 'home'));
+  setView(layout('<div class="pagetitle">' + greeting() + '</div><div class="pagesub">' + greetSub() + '</div>' + skeleton(4), 'home'));
   var d = await api('GET', '/api/dashboard');
   if (!d.ok) return;
   S.dash = d;
-  var h = '<div class="pagetitle">' + greeting() + '</div><div class="pagesub">' + t('greetSub') + '</div>';
+  var h = '<div class="pagetitle">' + greeting() + '</div><div class="pagesub">' + greetSub() + '</div>';
   var st = d.stats;
   h += '<div class="statgrid">'
     + statCard(st.all, 'statAll', '')
