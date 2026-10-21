@@ -52,13 +52,13 @@ function html(s) {
 const MUST_CHANGE_ALLOW = new Set(['/api/admin-password', '/api/logout']);
 
 function iconResp(body, type) {
-  return new Response(body, { headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=604800' } });
+  return new Response(body, { headers: { 'Content-Type': type, 'Cache-Control': 'public, max-age=3600' } });
 }
 function pngResp(b64) {
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new Response(bytes, { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=604800' } });
+  return new Response(bytes, { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' } });
 }
 export default {
   async fetch(req, env) {
