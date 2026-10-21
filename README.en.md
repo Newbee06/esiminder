@@ -117,45 +117,15 @@ npx wrangler deploy
 
 Go to **Settings → Notification Channels**, pick a channel, fill in its secrets, and hit **Saved**. Then verify from the Notifications page with **Send Test**.
 
-### Telegram
-
-1. Talk to [@BotFather](https://t.me/BotFather) on Telegram, send `/newbot`, and follow the prompts to get your **Bot Token**
-2. Send your bot a message first (or add it to a group and post there)
-3. Open `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates` in a browser and find `chat.id` in the response (group IDs are negative)
-4. Enter the Token and Chat ID in Settings
-
-### WeCom
-
-1. In a WeCom group chat: top-right `···` → Group Bot → Add Bot
-2. Copy the generated **Webhook** URL into Settings (no secret needed)
-
-### DingTalk
-
-1. In a DingTalk group: Group Settings → Bots → Add Custom Bot
-2. Choose "Sign" as the security option, then copy the **Webhook** and the `SEC...` secret
-3. Enter both in Settings
-
-### Feishu
-
-1. In a Feishu group: Group Settings → Bots → Add Custom Bot
-2. If signature verification is enabled, copy the secret
-3. Enter the **Webhook** and secret in Settings
-
-### Bark (iOS)
-
-1. Install **Bark** from the App Store and open it — your server URL is shown on the home screen
-2. Enter the **Key** (the part after `/` in that URL) in Settings
-
-### ServerChan
-
-1. Go to [sct.ftqq.com](https://sct.ftqq.com) and log in with WeChat
-2. Copy your **SendKey** (starts with `SCT`) from the SendKey page into Settings
-
-### Email (Resend)
-
-1. Sign up at [resend.com](https://resend.com) and verify your sending domain
-2. Create an **API Key** (starts with `re_`) on the API Keys page
-3. Enter the API Key, From (an address on your verified domain), and To (your inbox)
+| Channel | What to fill in | How to get it |
+|---|---|---|
+| Telegram | Bot Token, Chat ID | 1. Talk to [@BotFather](https://t.me/BotFather), send `/newbot`, and get the Token<br>2. Send your bot a message first (or add it to a group and post there)<br>3. Open `https://api.telegram.org/bot<TOKEN>/getUpdates` and find `chat.id` (group IDs are negative) |
+| WeCom | Webhook | Group chat top-right `···` → Group Bot → Add Bot, copy the Webhook (no secret needed) |
+| DingTalk | Webhook, sign secret | Group Settings → Bots → Add Custom Bot; choose "Sign" security, copy the Webhook and the `SEC...` secret |
+| Feishu | Webhook, sign secret (optional) | Group Settings → Bots → Add Custom Bot, copy the Webhook; copy the secret too if signature verification is on |
+| Bark (iOS) | Key | Install Bark from the App Store; the home screen shows your server URL — enter the Key (the part after `/`) |
+| ServerChan | SendKey | Go to [sct.ftqq.com](https://sct.ftqq.com), log in with WeChat, copy your SendKey (starts with `SCT`) |
+| Email (Resend) | API Key, From, To | Sign up at [resend.com](https://resend.com) and verify a sending domain → create a Key on the API Keys page (starts with `re_`) → From = an address on that domain, To = your inbox |
 
 ## 🆕 What's New in V2.1
 

@@ -117,45 +117,15 @@ npx wrangler deploy
 
 在「设置 → 通知通道」里选一个通道、填好密钥、点「已保存」即可；回到通知页用「发送测试」验证是否通。
 
-### Telegram
-
-1. 在 Telegram 里找 [@BotFather](https://t.me/BotFather)，发送 `/newbot` 按提示创建机器人，拿到 **Bot Token**
-2. 先给你的机器人发一句话（或把它拉进群组并发一条消息）
-3. 浏览器打开 `https://api.telegram.org/bot<你的Token>/getUpdates`，在返回数据里找到 `chat.id`（群组是负数）
-4. 把 Token 和 Chat ID 填进设置
-
-### 企业微信
-
-1. 在企业微信群聊里：右上角 `···` → 群机器人 → 添加机器人
-2. 复制生成的 **Webhook** 地址，填进设置即可（无需密钥）
-
-### 钉钉
-
-1. 在钉钉群里：群设置 → 机器人 → 添加自定义机器人
-2. 安全设置选「加签」，复制 **Webhook** 和 `SEC` 开头的密钥
-3. 两项都填进设置
-
-### 飞书
-
-1. 在飞书群里：群设置 → 群机器人 → 添加自定义机器人
-2. 如开启「签名校验」，复制密钥
-3. 把 **Webhook** 和密钥填进设置
-
-### Bark（iOS）
-
-1. 在 App Store 安装 **Bark**，打开 App，首页会显示服务器地址
-2. 把地址中 `/` 后面的那串 **Key** 填进设置
-
-### Server酱
-
-1. 打开 [sct.ftqq.com](https://sct.ftqq.com)，微信扫码登录
-2. 在 SendKey 页面复制你的 **SendKey**（`SCT` 开头），填进设置
-
-### 邮件（Resend）
-
-1. 在 [resend.com](https://resend.com) 注册账号，并验证你的发件域名
-2. 在 API Keys 页面创建 **API Key**（`re_` 开头）
-3. 填入 API Key、From（已验证域名的发件邮箱）和 To（你的收件邮箱）
+| 通道 | 需要填什么 | 获取方法 |
+|---|---|---|
+| Telegram | Bot Token、Chat ID | ① 找 [@BotFather](https://t.me/BotFather) 发送 `/newbot` 创建机器人，拿到 Token<br>② 先给机器人发一句话（或拉进群组发一条）<br>③ 打开 `https://api.telegram.org/bot<Token>/getUpdates`，在返回里找 `chat.id`（群组为负数） |
+| 企业微信 | Webhook | 群聊右上角 `···` → 群机器人 → 添加机器人，复制 Webhook（无需密钥） |
+| 钉钉 | Webhook、加签密钥 | 群设置 → 机器人 → 添加自定义机器人；安全设置选「加签」，复制 Webhook 和 `SEC` 开头的密钥 |
+| 飞书 | Webhook、签名密钥（可选） | 群设置 → 群机器人 → 添加自定义机器人，复制 Webhook；开启签名校验时一并复制密钥 |
+| Bark（iOS） | Key | App Store 安装 Bark，打开 App 首页的服务器地址，把 `/` 后面那串 Key 填入 |
+| Server酱 | SendKey | 打开 [sct.ftqq.com](https://sct.ftqq.com) 微信扫码登录，在 SendKey 页面复制（`SCT` 开头） |
+| 邮件（Resend） | API Key、From、To | 在 [resend.com](https://resend.com) 注册并验证发件域名 → API Keys 页创建 Key（`re_` 开头）→ From 填已验证域名邮箱、To 填收件邮箱 |
 
 ## 🆕 V2.1 更新
 
