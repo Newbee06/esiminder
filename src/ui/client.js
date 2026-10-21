@@ -229,10 +229,16 @@ var FLAGS = {
   '埃及': '🇪🇬', 'egypt': '🇪🇬', '南非': '🇿🇦', 'south africa': '🇿🇦', '以色列': '🇮🇱', 'israel': '🇮🇱',
   '沙特': '🇸🇦', 'saudi': '🇸🇦', '卡塔尔': '🇶🇦', 'qatar': '🇶🇦'
 };
-function flagFor(country, sz){
+var CARRIER_FLAGS = { 'dito': '🇵🇭' };
+function flagFor(country, sz, extra){
   var c = String(country || '').trim().toLowerCase();
-  if (!c) return icon('phone', sz || 36);
-  for (var k in FLAGS) { if (c.indexOf(k) >= 0) return FLAGS[k]; }
+  if (c) { for (var k in FLAGS) { if (c.indexOf(k) >= 0) return FLAGS[k]; } }
+  var x = String(extra || '').toLowerCase();
+  if (x) {
+    for (var k2 in FLAGS) { if (x.indexOf(k2) >= 0) return FLAGS[k2]; }
+    for (var k3 in CARRIER_FLAGS) { if (x.indexOf(k3) >= 0) return CARRIER_FLAGS[k3]; }
+  }
+  if (!c && !x) return icon('phone', sz || 36);
   return icon('globe', sz || 36);
 }
 /* ---------- router ---------- */
@@ -291,7 +297,7 @@ function tagPills(tags){
 function esimCard(e){
   var sub = [e.carrier, e.country].filter(function(x){ return x; }).join(' · ');
   return '<a class="ecard" href="#/esim/' + e.id + '">'
-    + '<div class="top"><span class="flag">' + flagFor(e.country) + '</span>'
+    + '<div class="top"><span class="flag">' + flagFor(e.country, 36, e.name + ' ' + (e.carrier || '') + ' ' + (e.provider || '')) + '</span>'
     + '<div style="flex:1;min-width:0"><div class="nm">' + esc(e.name) + '</div>'
     + (sub ? '<div class="car">' + esc(sub) + '</div>' : '') + '</div>'
     + statusPill(e.displayStatus) + '</div>'
@@ -426,7 +432,7 @@ async function renderEsimDetail(id){
   if (!d.ok) { nav('#/esims'); return; }
   var e = d.esim;
   var h = '<button class="backbtn" onclick="nav(\\'#/esims\\')">' + icon('chev', 18) + t('back') + '</button>';
-  h += '<div class="detailhead"><span class="flag">' + flagFor(e.country, 52) + '</span><div>'
+  h += '<div class="detailhead"><span class="flag">' + flagFor(e.country, 52, e.name + ' ' + (e.carrier || '') + ' ' + (e.provider || '')) + '</span><div>'
     + '<div class="nm">' + esc(e.name) + '</div>'
     + '<div class="car">' + esc([e.carrier, e.country, e.region].filter(function(x){ return x; }).join(' · ')) + '</div>'
     + '</div><span style="margin-left:auto">' + statusPill(e.displayStatus) + '</span></div>';
