@@ -150,6 +150,7 @@ var CSS = ':root{--sat:env(safe-area-inset-top);--sab:env(safe-area-inset-bottom
 CSS += '.extlinks{display:flex;justify-content:center;gap:12px;}.extlinks a{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text2);background:var(--glass-grad);border:1px solid var(--glass-brd);box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--glass-fx);backdrop-filter:var(--glass-fx);text-decoration:none;}.extlinks a:active{transform:scale(.93);}.extlinks .blogico{width:20px;height:20px;display:block;}[data-theme="dark"] .extlinks .blogico{filter:invert(1);}';
 CSS += '.topbar{position:fixed;top:calc(10px + var(--sat));right:14px;display:flex;gap:8px;z-index:60;}.tb-btn{min-width:38px;height:38px;padding:0 11px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--text2);background:var(--glass-grad);border:1px solid var(--glass-brd);box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--glass-fx);backdrop-filter:var(--glass-fx);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}.tb-btn:active{transform:scale(.93);}.tb-btn svg{display:block;}';
 CSS += '@media(max-width:899px){.pagetitle.pt-tab{display:none;}}';
+CSS += '@media(max-width:899px){.page.sub{padding-top:calc(60px + var(--sat));}}';
 CSS += '.sb-fv-dark{display:none;}[data-theme="dark"] .sb-fv-light{display:none;}[data-theme="dark"] .sb-fv-dark{display:block;}';
 try {
   var _styleEl = document.createElement('style');
@@ -282,7 +283,7 @@ function layout(content, active){
     return '<a href="' + n.hash + '" class="' + (active === n.k ? 'on' : '') + '"><span class="ic">' + n.ic + '</span><span>' + t(n.label) + '</span></a>';
   }).join('');
   return '<div class="appwrap"><div class="sidebar"><div class="logo" style="display:flex;align-items:center;gap:9px;">' + SB_FAVICON + '<span>eSIMinder</span></div>' + side + '<div style="margin-top:auto;padding-top:16px;">' + EXT_LINKS + '</div></div>'
-    + '<div class="page" style="flex:1">' + content + '</div></div>'
+    + '<div class="page' + (active === 'home' ? '' : ' sub') + '" style="flex:1">' + content + '</div></div>'
     + '<div class="topbar"><button class="tb-btn" onclick="toggleLang()" aria-label="Language">' + (LANG === 'zh' ? 'EN' : '中文') + '</button>'
     + '<button class="tb-btn" onclick="toggleTheme()" aria-label="Theme">' + themeIconSvg() + '</button></div>'
     + '<div class="tabbar">' + tabs + '</div>';
