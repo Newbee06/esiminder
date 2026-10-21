@@ -71,12 +71,6 @@ Workers + D1 + KV 全托管架构，零服务器、零运维。点一下部署�
   <img src="./docs/screenshots/notifications.png" alt="通知通道设置" width="900">
 </p>
 
-### 移动端
-
-<p align="center">
-  <img src="./docs/screenshots/mobile.png" alt="移动端界面" width="320">
-</p>
-
 ## 👤 适合谁
 
 - 经常出国、手机里躺着好几张旅行 eSIM 的人

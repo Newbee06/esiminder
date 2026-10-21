@@ -71,12 +71,6 @@ Fully hosted on Workers + D1 + KV — zero servers, zero maintenance. One click 
   <img src="./docs/screenshots/notifications.png" alt="Notification Channels" width="900">
 </p>
 
-### Mobile
-
-<p align="center">
-  <img src="./docs/screenshots/mobile.png" alt="Mobile UI" width="320">
-</p>
-
 ## 👤 Who It's For
 
 - Frequent travelers with a pocketful of travel eSIMs
